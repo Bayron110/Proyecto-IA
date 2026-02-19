@@ -1,138 +1,77 @@
 <div class="chat-wrapper">
 
-  <!-- Sidebar -->
-  <aside class="sidebar">
-    <div class="sidebar-header">
-      <div class="logo">
-        <span class="logo-icon">✦</span>
-        <span class="logo-text">Sketch<em>AI</em></span>
-      </div>
-      <p class="logo-sub">Describe tu diseño</p>
-    </div>
-
-    <nav class="sidebar-nav">
-      <p class="nav-label">Recientes</p>
-      <!-- historial de conversaciones -->
-    </nav>
-
-    <div class="sidebar-footer">
-      <button class="btn-new-chat">
-        <span>＋</span> Nueva conversación
-      </button>
-    </div>
-  </aside>
-
-  <!-- Main -->
   <main class="chat-main">
 
-    <!-- Topbar -->
-    <header class="chat-topbar">
-      <div class="model-badge">
-        <span class="badge-dot"></span>
-        Vision Model
-      </div>
-      <div class="topbar-actions">
-        <button class="icon-btn" title="Exportar">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/>
-            <line x1="12" y1="15" x2="12" y2="3"/>
-          </svg>
-        </button>
-      </div>
-    </header>
-
-    <!-- Mensajes -->
+    <!-- MENSAJES -->
     <div class="chat-messages">
 
-      <!-- Estado vacío -->
-      <div class="welcome-state">
-        <div class="welcome-icon">
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <rect x="3" y="3" width="18" height="18" rx="2"/>
-            <circle cx="8.5" cy="8.5" r="1.5"/>
-            <polyline points="21 15 16 10 5 21"/>
-          </svg>
-        </div>
-        <h2 class="welcome-title">Sube tu boceto o wireframe</h2>
-        <p class="welcome-desc">
-          Adjunta una imagen de tu diseño y recibirás una descripción<br>
-          detallada del HTML y CSS que necesitas para construirlo.
-        </p>
-        <div class="welcome-chips">
-          <span class="chip">🖊️ Boceto a mano</span>
-          <span class="chip">📐 Wireframe digital</span>
-          <span class="chip">🎨 Mockup</span>
-        </div>
+      <!-- Estado inicial -->
+      <div *ngIf="messages.length === 0" class="welcome-state">
+        <h2>Sube tu Imagen</h2>
+        <p>La IA convertirá tu diseño en código HTML.</p>
       </div>
 
-      <!-- Mensaje del bot (plantilla) -->
-      <div class="msg-row bot-row">
-        <div class="avatar bot-avatar">✦</div>
-        <div class="msg-bubble bot-bubble">
-          <p class="msg-text"></p>
-          <span class="msg-time"></span>
-        </div>
-      </div>
+      <!-- Mensajes dinámicos -->
+      <div 
+        *ngFor="let msg of messages"
+        class="msg-row"
+        [ngClass]="{
+          'user-row': msg.role === 'user',
+          'bot-row': msg.role === 'bot'
+        }"
+      >
 
-      <!-- Mensaje del usuario (plantilla) -->
-      <div class="msg-row user-row">
-        <div class="msg-bubble user-bubble">
-          <p class="msg-text"></p>
-          <span class="msg-time"></span>
-        </div>
-        <div class="avatar user-avatar">U</div>
-      </div>
+        <div *ngIf="msg.role === 'bot'" class="avatar bot-avatar">✦</div>
 
-      <!-- Typing indicator -->
-      <div class="msg-row bot-row">
-        <div class="avatar bot-avatar">✦</div>
-        <div class="msg-bubble bot-bubble typing-bubble">
-          <div class="typing-dots">
-            <span></span><span></span><span></span>
-          </div>
+        <div 
+          class="msg-bubble"
+          [ngClass]="{
+            'user-bubble': msg.role === 'user',
+            'bot-bubble': msg.role === 'bot'
+          }"
+        >
+          <pre class="msg-text">{{ msg.content }}</pre>
         </div>
+
+        <div *ngIf="msg.role === 'user'" class="avatar user-avatar">U</div>
+
       </div>
 
     </div>
 
-    <!-- Input -->
+    <!-- INPUT AREA -->
     <div class="chat-input-area">
 
-      <!-- Preview imagen adjunta -->
-      <div class="attached-preview">
-        <div class="attached-img">
-          <span class="attached-img-thumb">🖼️</span>
-          <span class="attached-img-name"></span>
-          <button class="attached-remove" aria-label="Eliminar">×</button>
-        </div>
+      <!-- Preview -->
+      <div *ngIf="selectedImage" class="attached-preview">
+        <img [src]="imagePreview" width="80" />
+        <span>{{ selectedImage?.name }}</span>
+        <button (click)="removeImage()">×</button>
       </div>
 
       <div class="input-box">
-        <label class="upload-btn" for="file-upload" title="Adjuntar imagen">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="18" height="18" rx="2"/>
-            <circle cx="8.5" cy="8.5" r="1.5"/>
-            <polyline points="21 15 16 10 5 21"/>
-          </svg>
-          <input id="file-upload" type="file" accept="image/*" hidden>
+
+        <label for="file-upload" class="upload-btn">
+          📎 Subir Imagen
         </label>
 
-        <textarea
-          class="input-textarea"
-          placeholder="Describe tu diseño o sube una imagen del boceto…"
-          rows="1"
-        ></textarea>
+        <input
+          id="file-upload"
+          type="file"
+          accept="image/*"
+          hidden
+          (change)="onFileSelected($event)"
+        />
 
-        <button class="send-btn" aria-label="Enviar">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <line x1="22" y1="2" x2="11" y2="13"/>
-            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-          </svg>
+        <button 
+          class="send-btn"
+          (click)="sendImage()"
+          [disabled]="!selectedImage">
+          Enviar
         </button>
+
       </div>
 
-      <p class="input-hint">Acepta imágenes JPG, PNG, WEBP</p>
     </div>
 
   </main>
