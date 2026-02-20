@@ -1,29 +1,134 @@
+/* Reset base */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ===== NAVBAR ===== */
+
 .navbar {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  backdrop-filter: blur(14px);
+  background: rgba(29, 78, 216, 0.85);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+}
+
+.nav-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 18px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #007bff;
-  padding: 10px 20px;
+}
+
+/* ===== LOGO ===== */
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.logo-icon {
+  width: 34px;
+  height: 34px;
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: white;
+  font-size: 14px;
+  box-shadow: 0 6px 18px rgba(79,70,229,0.4);
 }
 
-.navbar .logo {
-  font-weight: bold;
+.logo-text {
   font-size: 18px;
+  font-weight: 600;
+  color: white;
+  letter-spacing: 0.5px;
 }
 
-.navbar .nav-links {
+/* ===== LINKS ===== */
+
+.nav-links {
   list-style: none;
   display: flex;
-  gap: 15px;
+  gap: 28px;
+  align-items: center;
 }
 
-.navbar .nav-links li a {
-  color: white;
+.nav-links li a {
   text-decoration: none;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 15px;
   font-weight: 500;
+  position: relative;
+  transition: all 0.25s ease;
 }
 
-.navbar .nav-links li a:hover {
-  text-decoration: underline;
+/* Línea elegante */
+.nav-links li a::after {
+  content: "";
+  position: absolute;
+  width: 0%;
+  height: 2px;
+  bottom: -6px;
+  left: 0;
+  background: white;
+  transition: width 0.25s ease;
+}
+
+.nav-links li a:hover {
+  color: white;
+}
+
+.nav-links li a:hover::after {
+  width: 100%;
+}
+
+/* ===== BOTÓN CONTACTO ===== */
+
+.btn-contacto {
+  background: white;
+  color: #1d4ed8 !important;
+  padding: 8px 18px;
+  border-radius: 30px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+.btn-contacto::after {
+  display: none;
+}
+
+.btn-contacto:hover {
+  background: #f1f5ff;
+  transform: translateY(-3px);
+  box-shadow: 0 12px 25px rgba(0,0,0,0.2);
+}
+
+/* ===== CONTENIDO DEMO ===== */
+
+.content {
+  padding: 100px 20px;
+  text-align: center;
+}
+
+.content h1 {
+  font-size: 38px;
+  margin-bottom: 15px;
+  color: #111827;
+}
+
+.content p {
+  font-size: 18px;
+  color: #6b7280;
 }

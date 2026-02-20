@@ -1,58 +1,84 @@
 <div class="chat-wrapper">
-
   <main class="chat-main">
 
-    <!-- MENSAJES -->
-    <div class="chat-messages">
-
-      <!-- Estado inicial -->
-      <div *ngIf="messages.length === 0" class="welcome-state">
-        <h2>Sube tu Imagen</h2>
-        <p>La IA convertirá tu diseño en código HTML.</p>
+    <!-- Topbar -->
+    <header class="chat-topbar">
+      <div class="ai-brand">
+        <div class="ai-logo">✦</div>
+        <div>
+          <h1 class="ai-title">CodeVision AI</h1>
+          <span class="ai-subtitle">Convierte imágenes en HTML</span>
+        </div>
       </div>
 
-      <!-- Mensajes dinámicos -->
-      <div 
-        *ngFor="let msg of messages"
-        class="msg-row"
-        [ngClass]="{
-          'user-row': msg.role === 'user',
-          'bot-row': msg.role === 'bot'
-        }"
-      >
+      <div class="ai-status">
+        <span class="status-dot"></span>
+        <span>Modelo activo</span>
+      </div>
+    </header>
 
-        <div *ngIf="msg.role === 'bot'" class="avatar bot-avatar">✦</div>
+    <!-- Mensajes -->
+    <section class="chat-messages">
 
+      @if (messages.length === 0) {
+        <div class="welcome-state">
+          <div class="welcome-icon">🖼️</div>
+          <h2 class="welcome-title">Convierte tu diseño en código</h2>
+          <p class="welcome-desc">
+            Sube una imagen y nuestra IA generará automáticamente
+            el código HTML limpio y estructurado.
+          </p>
+        </div>
+      }
+
+      @for (msg of messages; track msg) {
         <div 
-          class="msg-bubble"
+          class="msg-row"
           [ngClass]="{
-            'user-bubble': msg.role === 'user',
-            'bot-bubble': msg.role === 'bot'
+            'user-row': msg.role === 'user',
+            'bot-row': msg.role === 'bot'
           }"
         >
-          <pre class="msg-text">{{ msg.content }}</pre>
+
+          @if (msg.role === 'bot') {
+            <div class="avatar bot-avatar">✦</div>
+          }
+
+          <article 
+            class="msg-bubble"
+            [ngClass]="{
+              'user-bubble': msg.role === 'user',
+              'bot-bubble': msg.role === 'bot'
+            }"
+          >
+            <pre class="msg-text">{{ msg.content }}</pre>
+          </article>
+
+          @if (msg.role === 'user') {
+            <div class="avatar user-avatar">U</div>
+          }
+
         </div>
+      }
 
-        <div *ngIf="msg.role === 'user'" class="avatar user-avatar">U</div>
+    </section>
 
-      </div>
+    <!-- Input -->
+    <footer class="chat-input-area">
 
-    </div>
-
-    <!-- INPUT AREA -->
-    <div class="chat-input-area">
-
-      <!-- Preview -->
-      <div *ngIf="selectedImage" class="attached-preview">
-        <img [src]="imagePreview" width="80" />
-        <span>{{ selectedImage?.name }}</span>
-        <button (click)="removeImage()">×</button>
-      </div>
+      @if (selectedImage) {
+        <div class="attached-preview">
+          <img [src]="imagePreview" class="attached-img" />
+          <div class="attached-info">
+            <span>{{ selectedImage.name }}</span>
+            <button (click)="removeImage()">Eliminar</button>
+          </div>
+        </div>
+      }
 
       <div class="input-box">
-
         <label for="file-upload" class="upload-btn">
-          📎 Subir Imagen
+          📎 Subir imagen
         </label>
 
         <input
@@ -67,12 +93,15 @@
           class="send-btn"
           (click)="sendImage()"
           [disabled]="!selectedImage">
-          Enviar
+          Generar código
         </button>
-
       </div>
 
-    </div>
+      <div class="input-hint">
+        JPG, PNG o WEBP
+      </div>
+
+    </footer>
 
   </main>
 </div>
