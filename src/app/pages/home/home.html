@@ -1,107 +1,173 @@
+<!-- ===== WRAPPER PRINCIPAL ===== -->
 <div class="chat-wrapper">
-  <main class="chat-main">
+  <div class="chat-main">
 
-    <!-- Topbar -->
-    <header class="chat-topbar">
+    <!-- TOPBAR -->
+    <div class="chat-topbar">
       <div class="ai-brand">
         <div class="ai-logo">✦</div>
         <div>
-          <h1 class="ai-title">CodeVision AI</h1>
-          <span class="ai-subtitle">Convierte imágenes en HTML</span>
+          <p class="ai-title">CodeVision AI</p>
+          <p class="ai-subtitle">Convierte imágenes en HTML</p>
         </div>
       </div>
 
       <div class="ai-status">
         <span class="status-dot"></span>
-        <span>Modelo activo</span>
+        Modelo activo
+
+        <div class="credits-badge" [class.low]="creditsLeft <= 1">
+          <span>⚡</span>
+          {{ creditsLeft }} crédito{{ creditsLeft !== 1 ? 's' : '' }} gratuito{{ creditsLeft !== 1 ? 's' : '' }}
+        </div>
       </div>
-    </header>
+    </div>
 
-    <!-- Mensajes -->
-    <section class="chat-messages">
+    <!-- LAYOUT: CHAT + PREVIEW -->
+    <div class="chat-layout" [class.with-preview]="showPreview">
 
-      @if (messages.length === 0) {
-        <div class="welcome-state">
-          <div class="welcome-icon">🖼️</div>
-          <h2 class="welcome-title">Convierte tu diseño en código</h2>
-          <p class="welcome-desc">
-            Sube una imagen y nuestra IA generará automáticamente
-            el código HTML limpio y estructurado.
-          </p>
-        </div>
-      }
+      <!-- COLUMNA IZQUIERDA: Mensajes -->
+      <div class="chat-column">
 
-      @for (msg of messages; track msg) {
-        <div 
-          class="msg-row"
-          [ngClass]="{
-            'user-row': msg.role === 'user',
-            'bot-row': msg.role === 'bot'
-          }"
-        >
+        <!-- Estado vacío -->
+        <ng-container *ngIf="messages.length === 0 && !isLoading">
+          <div class="welcome-state">
+            <div class="welcome-icon">🖼️</div>
+            <h2 class="welcome-title">Convierte tu diseño en código</h2>
+            <p class="welcome-desc">Sube una imagen y nuestra IA generará automáticamente el código HTML limpio y estructurado.</p>
+          </div>
+        </ng-container>
 
-          @if (msg.role === 'bot') {
+        <!-- Mensajes -->
+        <div class="chat-messages">
+          <ng-container *ngFor="let msg of messages">
+
+            <!-- Mensaje del BOT -->
+            <div class="msg-row" *ngIf="msg.role === 'bot'">
+              <div class="avatar bot-avatar">✦</div>
+              <div class="msg-bubble bot-bubble">
+                <div class="bot-header">
+                  <span class="bot-label">HTML generado</span>
+                  <button class="preview-btn" (click)="openPreview(msg.content)">
+                    👁️ Ver preview
+                  </button>
+                </div>
+                <pre class="code-preview"><code>{{ msg.content.slice(0, 220) }}{{ msg.content.length > 220 ? '\n...' : '' }}</code></pre>
+              </div>
+            </div>
+
+            <!-- Mensaje del USUARIO -->
+            <div class="msg-row user-row" *ngIf="msg.role === 'user'">
+              <div class="avatar user-avatar">U</div>
+              <div class="msg-bubble user-bubble">{{ msg.content }}</div>
+            </div>
+
+          </ng-container>
+
+          <!-- Loading indicator -->
+          <div class="msg-row" *ngIf="isLoading">
             <div class="avatar bot-avatar">✦</div>
-          }
-
-          <article 
-            class="msg-bubble"
-            [ngClass]="{
-              'user-bubble': msg.role === 'user',
-              'bot-bubble': msg.role === 'bot'
-            }"
-          >
-            <pre class="msg-text">{{ msg.content }}</pre>
-          </article>
-
-          @if (msg.role === 'user') {
-            <div class="avatar user-avatar">U</div>
-          }
-
-        </div>
-      }
-
-    </section>
-
-    <!-- Input -->
-    <footer class="chat-input-area">
-
-      @if (selectedImage) {
-        <div class="attached-preview">
-          <img [src]="imagePreview" class="attached-img" />
-          <div class="attached-info">
-            <span>{{ selectedImage.name }}</span>
-            <button (click)="removeImage()">Eliminar</button>
+            <div class="msg-bubble bot-bubble loading-bubble">
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="loading-text">Analizando imagen...</span>
+            </div>
           </div>
         </div>
-      }
 
-      <div class="input-box">
-        <label for="file-upload" class="upload-btn">
-          📎 Subir imagen
-        </label>
+        <!-- INPUT AREA -->
+        <div class="chat-input-area">
 
-        <input
-          id="file-upload"
-          type="file"
-          accept="image/*"
-          hidden
-          (change)="onFileSelected($event)"
-        />
+          <!-- Preview de imagen adjunta -->
+          <div class="attached-preview" *ngIf="selectedImage && imagePreview">
+            <img [src]="imagePreview" class="attached-img" alt="preview" />
+            <div class="attached-info">
+              <p>{{ selectedImage.name }}</p>
+              <button (click)="removeImage()">✕ Eliminar</button>
+            </div>
+          </div>
 
-        <button 
-          class="send-btn"
-          (click)="sendImage()"
-          [disabled]="!selectedImage">
-          Generar código
-        </button>
+          <div class="input-box">
+            <label class="upload-btn" for="fileInput">📎 Subir imagen</label>
+            <input id="fileInput" type="file" accept="image/*" (change)="onFileSelected($event)" style="display:none" />
+
+            <div class="credits-mini">
+              <span [class.low]="creditsLeft <= 1">⚡ {{ creditsLeft }}/3</span>
+            </div>
+
+            <button
+              class="send-btn"
+              (click)="sendImage()"
+              [disabled]="!selectedImage || isLoading">
+              {{ isLoading ? 'Generando...' : 'Generar código' }}
+            </button>
+          </div>
+
+          <p class="input-hint">JPG, PNG o WEBP · {{ creditsLeft }} generaciones gratuitas restantes</p>
+        </div>
+
+      </div><!-- fin chat-column -->
+
+      <!-- COLUMNA DERECHA: Panel de Previsualización -->
+      <div class="preview-panel" *ngIf="showPreview">
+        <div class="preview-header">
+          <div class="preview-tabs">
+            <button [class.active]="previewTab === 'code'" (click)="previewTab = 'code'">📄 Código</button>
+            <button [class.active]="previewTab === 'preview'" (click)="previewTab = 'preview'">🖥️ Vista previa</button>
+          </div>
+          <div class="preview-actions">
+            <button class="action-btn" (click)="copyCode()" [title]="copySuccess ? '¡Copiado!' : 'Copiar código'">
+              {{ copySuccess ? '✅' : '📋' }}
+            </button>
+            <button class="action-btn" (click)="openInNewTab()" title="Abrir en nueva pestaña">↗️</button>
+            <button class="close-btn" (click)="closePreview()">✕</button>
+          </div>
+        </div>
+
+        <div class="preview-body">
+          <pre class="full-code" *ngIf="previewTab === 'code'"><code>{{ previewCode }}</code></pre>
+          <iframe
+            *ngIf="previewTab === 'preview'"
+            [src]="previewIframeSrc"
+            class="preview-iframe"
+            title="Vista previa"
+            sandbox="allow-scripts allow-same-origin">
+          </iframe>
+        </div>
       </div>
 
-      <div class="input-hint">
-        JPG, PNG o WEBP
-      </div>
+    </div><!-- fin chat-layout -->
+  </div>
+</div>
 
-    </footer>
+<!-- ===== MODAL: CRÉDITOS AGOTADOS ===== -->
+<div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
 
-  </main>
+    <div class="modal-icon">⚡</div>
+
+    <h2 class="modal-title">Créditos gratuitos agotados</h2>
+    <p class="modal-desc">
+      Has utilizado tus <strong>3 generaciones gratuitas</strong>.<br>
+      Inicia sesión o crea una cuenta para continuar sin límites.
+    </p>
+
+    <div class="modal-perks">
+      <div class="perk">✅ Generaciones ilimitadas</div>
+      <div class="perk">✅ Exportar HTML + CSS</div>
+      <div class="perk">✅ Historial de proyectos</div>
+    </div>
+
+    <div class="modal-buttons">
+      <button class="modal-btn primary" (click)="goToRegister()">
+        🚀 Crear cuenta gratis
+      </button>
+      <button class="modal-btn secondary" (click)="goToLogin()">
+        Iniciar sesión
+      </button>
+    </div>
+
+    <button class="modal-close" (click)="closeModal()">✕</button>
+  </div>
 </div>
