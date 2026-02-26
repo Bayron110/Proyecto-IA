@@ -8,13 +8,20 @@
       <p class="register-subtitle">Empieza a convertir imágenes en código hoy</p>
     </div>
 
-    <form class="register-form">
+    <!-- 🔥 IMPORTANTE: conectar el formulario -->
+    <form class="register-form" (ngSubmit)="registrar()">
 
       <div class="input-group">
         <label for="name">Nombre completo</label>
         <div class="input-wrapper">
           <span class="input-icon">👤</span>
-          <input type="text" id="name" placeholder="Tu nombre" />
+          <input 
+            type="text" 
+            id="name" 
+            name="nombre"
+            [(ngModel)]="nombre"
+            placeholder="Tu nombre"
+            required />
         </div>
       </div>
 
@@ -22,7 +29,13 @@
         <label for="email">Correo electrónico</label>
         <div class="input-wrapper">
           <span class="input-icon">✉</span>
-          <input type="email" id="email" placeholder="tu@correo.com" />
+          <input 
+            type="email" 
+            id="email" 
+            name="email"
+            [(ngModel)]="email"
+            placeholder="tu@correo.com"
+            required />
         </div>
       </div>
 
@@ -30,7 +43,13 @@
         <label for="password">Contraseña</label>
         <div class="input-wrapper">
           <span class="input-icon">🔒</span>
-          <input type="password" id="password" placeholder="Mínimo 8 caracteres" />
+          <input 
+            type="password" 
+            id="password" 
+            name="password"
+            [(ngModel)]="password"
+            placeholder="Mínimo 8 caracteres"
+            required />
         </div>
       </div>
 

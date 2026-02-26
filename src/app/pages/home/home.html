@@ -1,26 +1,103 @@
-<div class="chat-wrapper">
-  <div class="chat-main">
+<div class="app-shell">
 
-    <div class="chat-topbar">
+  <!-- Sidebar historial estilo ChatGPT -->
+  <aside class="sidebar" [class.collapsed]="sidebarCollapsed">
+    <div class="sidebar-header">
       <div class="ai-brand">
         <div class="ai-logo">✦</div>
-        <div>
-          <p class="ai-title">CodeVision AI</p>
-          <p class="ai-subtitle">Convierte imágenes en HTML</p>
+        <span class="ai-title" *ngIf="!sidebarCollapsed">CodeVision</span>
+      </div>
+      <button class="sidebar-toggle" (click)="sidebarCollapsed = !sidebarCollapsed" [title]="sidebarCollapsed ? 'Expandir' : 'Colapsar'">
+        {{ sidebarCollapsed ? '›' : '‹' }}
+      </button>
+    </div>
+
+    <button class="new-chat-btn" (click)="newChat()" *ngIf="!sidebarCollapsed">
+      <span>✦</span> Nueva generación
+    </button>
+    <button class="new-chat-btn icon-only" (click)="newChat()" *ngIf="sidebarCollapsed" title="Nueva generación">
+      ✦
+    </button>
+
+    <div class="sidebar-history" *ngIf="!sidebarCollapsed">
+      <p class="sidebar-section-label" *ngIf="historyGroups.today.length > 0">Hoy</p>
+      <button
+        class="history-item"
+        *ngFor="let item of historyGroups.today"
+        [class.active]="selectedHistoryId === item.id"
+        (click)="loadHistoryItem(item)">
+        <span class="history-item-icon">🖼️</span>
+        <span class="history-item-label">{{ item.label }}</span>
+        <span class="history-item-time">{{ item.timestamp | date:'HH:mm' }}</span>
+      </button>
+
+      <p class="sidebar-section-label" *ngIf="historyGroups.yesterday.length > 0">Ayer</p>
+      <button
+        class="history-item"
+        *ngFor="let item of historyGroups.yesterday"
+        [class.active]="selectedHistoryId === item.id"
+        (click)="loadHistoryItem(item)">
+        <span class="history-item-icon">🖼️</span>
+        <span class="history-item-label">{{ item.label }}</span>
+      </button>
+
+      <p class="sidebar-section-label" *ngIf="historyGroups.older.length > 0">Anteriores</p>
+      <button
+        class="history-item"
+        *ngFor="let item of historyGroups.older"
+        [class.active]="selectedHistoryId === item.id"
+        (click)="loadHistoryItem(item)">
+        <span class="history-item-icon">🖼️</span>
+        <span class="history-item-label">{{ item.label }}</span>
+      </button>
+
+      <div class="sidebar-empty" *ngIf="historyGroups.today.length === 0 && historyGroups.yesterday.length === 0 && historyGroups.older.length === 0">
+        <span>🗂️</span>
+        <p>Sin historial aún</p>
+      </div>
+    </div>
+
+    <div class="sidebar-footer" *ngIf="!sidebarCollapsed">
+      <ng-container *ngIf="currentUser">
+        <div class="user-info">
+          <span class="user-avatar-icon">👤</span>
+          <span class="user-email">{{ currentUser.email }}</span>
+        </div>
+        <button class="logout-btn" (click)="logout()">🚪 Salir</button>
+      </ng-container>
+      <ng-container *ngIf="!currentUser && !isAuthLoading">
+        <button class="nav-login-btn" (click)="goToLogin()">Iniciar sesión</button>
+        <button class="nav-register-btn" (click)="goToRegister()">Registrarse</button>
+      </ng-container>
+    </div>
+  </aside>
+
+  <!-- Área principal -->
+  <div class="chat-main">
+
+    <!-- Topbar compacto -->
+    <div class="chat-topbar">
+      <div class="topbar-left">
+        <div class="ai-status">
+          <span class="status-dot"></span>
+          Modelo activo
         </div>
       </div>
-      <div class="ai-status">
-        <span class="status-dot"></span>
-        Modelo activo
+      <div class="topbar-right">
         <div class="credits-badge" [class.low]="creditsLeft <= 1">
           <span>⚡</span>
-          {{ creditsLeft }} crédito{{ creditsLeft !== 1 ? 's' : '' }} gratuito{{ creditsLeft !== 1 ? 's' : '' }}
+          {{ creditsLeft }} crédito{{ creditsLeft !== 1 ? 's' : '' }}
         </div>
+        <ng-container *ngIf="!currentUser && !isAuthLoading">
+          <button class="nav-login-btn" (click)="goToLogin()">Iniciar sesión</button>
+          <button class="nav-register-btn" (click)="goToRegister()">Registrarse</button>
+        </ng-container>
       </div>
     </div>
 
     <div class="main-layout">
 
+      <!-- Panel chat -->
       <div class="left-panel">
 
         <ng-container *ngIf="messages.length === 0 && !isLoading">
@@ -36,10 +113,17 @@
               <span class="chip">🎨 CSS separado</span>
               <span class="chip">🔷 TypeScript</span>
             </div>
+            <div class="guest-banner" *ngIf="!currentUser && !isAuthLoading">
+              <p>🔒 <strong>Inicia sesión</strong> para obtener 25 créditos y guardar tu historial</p>
+              <div class="guest-banner-btns">
+                <button (click)="goToRegister()">Crear cuenta gratis</button>
+                <button class="ghost" (click)="goToLogin()">Iniciar sesión</button>
+              </div>
+            </div>
           </div>
         </ng-container>
 
-        <div class="chat-messages">
+        <div class="chat-messages" #chatMessages>
           <ng-container *ngFor="let msg of messages; let i = index">
 
             <div class="msg-row user-row" *ngIf="msg.role === 'user'">
@@ -48,54 +132,45 @@
             </div>
 
             <div class="bot-response" *ngIf="msg.role === 'bot'">
-
               <div class="bot-response-header">
                 <div class="avatar bot-avatar">✦</div>
                 <div class="bot-meta">
                   <span class="bot-label">Código generado</span>
-                  <span class="bot-timestamp">Generación #{{ i + 1 }}</span>
+                  <span class="bot-timestamp">
+                    Generación #{{ getBotIndex(i) }}
+                    <span *ngIf="msg.timestamp"> · {{ msg.timestamp | date:'shortTime' }}</span>
+                  </span>
                 </div>
-                <button
-                  class="preview-btn"
-                  (click)="openPreview(msg.htmlContent, msg.cssContent, msg.tsContent)">
+                <button class="preview-btn" (click)="openPreview(msg.htmlContent, msg.cssContent, msg.tsContent)">
                   👁️ Ver preview
                 </button>
               </div>
 
+              <!-- HTML block -->
               <div class="code-block-wrapper">
                 <div class="code-block-header">
-                  <div class="lang-badge html-badge">
-                    <span class="lang-dot"></span>HTML
-                  </div>
-                  <button class="copy-mini-btn" (click)="copyToClipboard(msg.htmlContent)">
-                    📋 Copiar
-                  </button>
+                  <div class="lang-badge html-badge"><span class="lang-dot"></span>HTML</div>
+                  <button class="copy-mini-btn" (click)="copyToClipboard(msg.htmlContent)">📋 Copiar</button>
                 </div>
-                <pre class="code-preview" #codeBlock><code>{{ msg.htmlContent.slice(0, 300) }}{{ msg.htmlContent.length > 300 ? '\n...' : '' }}</code></pre>
+                <pre class="code-preview" [class.is-typing]="msg.isTyping && msg.typingStep === 'html'" [class.typing-done]="!msg.isTyping || msg.typingStep !== 'html'"><code>{{ getVisibleCode(msg, 'html') }}{{ msg.isTyping && msg.typingStep === 'html' ? '█' : '' }}</code></pre>
               </div>
 
+              <!-- CSS block -->
               <div class="code-block-wrapper" *ngIf="msg.cssContent">
                 <div class="code-block-header">
-                  <div class="lang-badge css-badge">
-                    <span class="lang-dot"></span>CSS
-                  </div>
-                  <button class="copy-mini-btn" (click)="copyToClipboard(msg.cssContent)">
-                    📋 Copiar
-                  </button>
+                  <div class="lang-badge css-badge"><span class="lang-dot"></span>CSS</div>
+                  <button class="copy-mini-btn" (click)="copyToClipboard(msg.cssContent)">📋 Copiar</button>
                 </div>
-                <pre class="code-preview" #codeBlock><code>{{ msg.cssContent.slice(0, 300) }}{{ msg.cssContent.length > 300 ? '\n...' : '' }}</code></pre>
+                <pre class="code-preview" [class.is-typing]="msg.isTyping && msg.typingStep === 'css'" [class.typing-done]="!msg.isTyping || msg.typingStep !== 'css'"><code>{{ getVisibleCode(msg, 'css') }}{{ msg.isTyping && msg.typingStep === 'css' ? '█' : '' }}</code></pre>
               </div>
 
+              <!-- TS block -->
               <div class="code-block-wrapper" *ngIf="msg.tsContent">
                 <div class="code-block-header">
-                  <div class="lang-badge ts-badge">
-                    <span class="lang-dot"></span>TypeScript
-                  </div>
-                  <button class="copy-mini-btn" (click)="copyToClipboard(msg.tsContent)">
-                    📋 Copiar
-                  </button>
+                  <div class="lang-badge ts-badge"><span class="lang-dot"></span>TypeScript</div>
+                  <button class="copy-mini-btn" (click)="copyToClipboard(msg.tsContent)">📋 Copiar</button>
                 </div>
-                <pre class="code-preview" #codeBlock><code>{{ msg.tsContent.slice(0, 300) }}{{ msg.tsContent.length > 300 ? '\n...' : '' }}</code></pre>
+                <pre class="code-preview" [class.is-typing]="msg.isTyping && msg.typingStep === 'ts'" [class.typing-done]="!msg.isTyping || msg.typingStep !== 'ts'"><code>{{ getVisibleCode(msg, 'ts') }}{{ msg.isTyping && msg.typingStep === 'ts' ? '█' : '' }}</code></pre>
               </div>
 
             </div>
@@ -122,16 +197,10 @@
           </div>
 
           <div class="input-box">
-            <label class="upload-btn" for="fileInput">📎 Subir imagen</label>
-            <input
-              id="fileInput"
-              type="file"
-              accept="image/*"
-              (change)="onFileSelected($event)"
-              style="display: none"
-            />
+            <label class="upload-btn" for="fileInput">📎</label>
+            <input id="fileInput" type="file" accept="image/*" (change)="onFileSelected($event)" style="display: none" />
             <div class="credits-mini">
-              <span [class.low]="creditsLeft <= 1">⚡ {{ creditsLeft }}/3</span>
+              <span [class.low]="creditsLeft <= 1">⚡ {{ creditsLeft }}/{{ freeCredits }}</span>
             </div>
             <textarea
               [(ngModel)]="userInstruction"
@@ -139,16 +208,15 @@
               class="instruction-input"
             ></textarea>
             <button class="send-btn" (click)="sendImage()" [disabled]="!selectedImage || isLoading">
-              {{ isLoading ? 'Generando...' : 'Generar código' }}
+              {{ isLoading ? '...' : '→' }}
             </button>
           </div>
-
-          <p class="input-hint">JPG, PNG o WEBP · {{ creditsLeft }} generaciones gratuitas restantes</p>
+          <p class="input-hint">JPG, PNG o WEBP · {{ creditsLeft }} generaciones {{ currentUser ? '' : 'gratuitas ' }}restantes</p>
         </div>
-
       </div>
-      <div class="right-panel">
 
+      <!-- Panel preview derecho -->
+      <div class="right-panel">
         <div class="preview-empty" *ngIf="!showPreview">
           <div class="preview-empty-icon">🖥️</div>
           <p class="preview-empty-title">Sin previsualización</p>
@@ -156,49 +224,29 @@
         </div>
 
         <div class="preview-container" *ngIf="showPreview">
-
           <div class="preview-header">
             <div class="preview-tabs">
-              <button [class.active]="previewTab === 'preview'" (click)="previewTab = 'preview'">
-                🖥️ Vista previa
-              </button>
-              <button [class.active]="previewTab === 'html'" (click)="previewTab = 'html'">
-                📄 HTML
-              </button>
-              <button [class.active]="previewTab === 'css'" (click)="previewTab = 'css'">
-                🎨 CSS
-              </button>
-              <button [class.active]="previewTab === 'ts'" (click)="previewTab = 'ts'">
-                🔷 TS
-              </button>
+              <button [class.active]="previewTab === 'preview'" (click)="previewTab = 'preview'">🖥️ Vista previa</button>
+              <button [class.active]="previewTab === 'html'" (click)="previewTab = 'html'">📄 HTML</button>
+              <button [class.active]="previewTab === 'css'" (click)="previewTab = 'css'">🎨 CSS</button>
+              <button [class.active]="previewTab === 'ts'" (click)="previewTab = 'ts'">🔷 TS</button>
             </div>
             <div class="preview-actions">
-              <button class="action-btn" (click)="copyCode()" [title]="copySuccess ? '¡Copiado!' : 'Copiar'">
-                {{ copySuccess ? '✅' : '📋' }}
-              </button>
-              <button class="action-btn" (click)="openInNewTab()" title="Abrir en nueva pestaña">
-                ↗️
-              </button>
+              <button class="action-btn" (click)="copyCode()" [title]="copySuccess ? '¡Copiado!' : 'Copiar'">{{ copySuccess ? '✅' : '📋' }}</button>
+              <button class="action-btn" (click)="openInNewTab()" title="Abrir en nueva pestaña">↗️</button>
               <button class="close-btn" (click)="closePreview()">✕</button>
             </div>
           </div>
 
           <div class="preview-body">
-
-            <iframe
-              *ngIf="previewTab === 'preview'"
-              [src]="previewIframeSrc"
-              class="preview-iframe"
-              title="Vista previa"
-              sandbox="allow-scripts allow-same-origin"
-            ></iframe>
+            <iframe *ngIf="previewTab === 'preview'" [src]="previewIframeSrc" class="preview-iframe" title="Vista previa" sandbox="allow-scripts allow-same-origin"></iframe>
 
             <div class="code-view" *ngIf="previewTab === 'html'">
               <div class="code-view-header">
                 <div class="lang-badge html-badge"><span class="lang-dot"></span>HTML</div>
                 <span class="line-count">{{ getLineCount(previewHtmlContent) }} líneas</span>
               </div>
-              <pre class="full-code code-reveal"><code>{{ previewHtmlContent }}</code></pre>
+              <pre class="full-code"><code>{{ previewHtmlContent }}</code></pre>
             </div>
 
             <div class="code-view" *ngIf="previewTab === 'css'">
@@ -206,7 +254,7 @@
                 <div class="lang-badge css-badge"><span class="lang-dot"></span>CSS</div>
                 <span class="line-count">{{ getLineCount(previewCssContent) }} líneas</span>
               </div>
-              <pre class="full-code code-reveal"><code>{{ previewCssContent }}</code></pre>
+              <pre class="full-code"><code>{{ previewCssContent }}</code></pre>
             </div>
 
             <div class="code-view" *ngIf="previewTab === 'ts'">
@@ -214,33 +262,34 @@
                 <div class="lang-badge ts-badge"><span class="lang-dot"></span>TypeScript</div>
                 <span class="line-count">{{ getLineCount(previewTsContent) }} líneas</span>
               </div>
-              <pre class="full-code code-reveal"><code>{{ previewTsContent }}</code></pre>
+              <pre class="full-code"><code>{{ previewTsContent }}</code></pre>
             </div>
-
           </div>
         </div>
-
       </div>
 
     </div>
-
   </div>
 </div>
 
+<!-- Modal créditos agotados -->
 <div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
   <div class="modal-card" (click)="$event.stopPropagation()">
     <div class="modal-icon">⚡</div>
     <h2 class="modal-title">Créditos gratuitos agotados</h2>
-    <p class="modal-desc">
+    <p class="modal-desc" *ngIf="!currentUser">
       Has utilizado tus <strong>3 generaciones gratuitas</strong>.<br />
-      Inicia sesión o crea una cuenta para continuar sin límites.
+      Inicia sesión o crea una cuenta para obtener <strong>25 créditos</strong>.
     </p>
-    <div class="modal-perks">
-      <div class="perk">✅ Generaciones ilimitadas</div>
+    <p class="modal-desc" *ngIf="currentUser">
+      Has utilizado tus <strong>25 generaciones</strong> disponibles.
+    </p>
+    <div class="modal-perks" *ngIf="!currentUser">
+      <div class="perk">✅ 25 generaciones incluidas</div>
       <div class="perk">✅ Exportar HTML + CSS + TS</div>
       <div class="perk">✅ Historial de proyectos</div>
     </div>
-    <div class="modal-buttons">
+    <div class="modal-buttons" *ngIf="!currentUser">
       <button class="modal-btn primary" (click)="goToRegister()">🚀 Crear cuenta gratis</button>
       <button class="modal-btn secondary" (click)="goToLogin()">Iniciar sesión</button>
     </div>

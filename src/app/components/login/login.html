@@ -8,13 +8,20 @@
       <p class="login-subtitle">Inicia sesión para continuar generando</p>
     </div>
 
-    <form class="login-form">
+    <!-- 🔥 Conectar formulario -->
+    <form class="login-form" (ngSubmit)="login()">
 
       <div class="input-group">
         <label for="email">Correo electrónico</label>
         <div class="input-wrapper">
           <span class="input-icon">✉</span>
-          <input type="email" id="email" placeholder="tu@correo.com" />
+          <input 
+            type="email"
+            id="email"
+            name="email"
+            [(ngModel)]="email"
+            placeholder="tu@correo.com"
+            required />
         </div>
       </div>
 
@@ -22,7 +29,13 @@
         <label for="password">Contraseña</label>
         <div class="input-wrapper">
           <span class="input-icon">🔒</span>
-          <input type="password" id="password" placeholder="••••••••" />
+          <input 
+            type="password"
+            id="password"
+            name="password"
+            [(ngModel)]="password"
+            placeholder="••••••••"
+            required />
         </div>
       </div>
 
