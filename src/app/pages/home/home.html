@@ -1,8 +1,6 @@
-<!-- ===== WRAPPER PRINCIPAL ===== -->
 <div class="chat-wrapper">
   <div class="chat-main">
 
-    <!-- TOPBAR -->
     <div class="chat-topbar">
       <div class="ai-brand">
         <div class="ai-logo">✦</div>
@@ -11,11 +9,9 @@
           <p class="ai-subtitle">Convierte imágenes en HTML</p>
         </div>
       </div>
-
       <div class="ai-status">
         <span class="status-dot"></span>
         Modelo activo
-
         <div class="credits-badge" [class.low]="creditsLeft <= 1">
           <span>⚡</span>
           {{ creditsLeft }} crédito{{ creditsLeft !== 1 ? 's' : '' }} gratuito{{ creditsLeft !== 1 ? 's' : '' }}
@@ -23,48 +19,88 @@
       </div>
     </div>
 
-    <!-- LAYOUT: CHAT + PREVIEW -->
-    <div class="chat-layout" [class.with-preview]="showPreview">
+    <div class="main-layout">
 
-      <!-- COLUMNA IZQUIERDA: Mensajes -->
-      <div class="chat-column">
+      <div class="left-panel">
 
-        <!-- Estado vacío -->
         <ng-container *ngIf="messages.length === 0 && !isLoading">
           <div class="welcome-state">
             <div class="welcome-icon">🖼️</div>
             <h2 class="welcome-title">Convierte tu diseño en código</h2>
-            <p class="welcome-desc">Sube una imagen y nuestra IA generará automáticamente el código HTML limpio y estructurado.</p>
+            <p class="welcome-desc">
+              Sube una imagen y nuestra IA generará automáticamente HTML, CSS y TypeScript limpios.
+            </p>
+            <div class="welcome-chips">
+              <span class="chip">⚡ IA Generativa</span>
+              <span class="chip">📋 HTML limpio</span>
+              <span class="chip">🎨 CSS separado</span>
+              <span class="chip">🔷 TypeScript</span>
+            </div>
           </div>
         </ng-container>
 
-        <!-- Mensajes -->
         <div class="chat-messages">
-          <ng-container *ngFor="let msg of messages">
+          <ng-container *ngFor="let msg of messages; let i = index">
 
-            <!-- Mensaje del BOT -->
-            <div class="msg-row" *ngIf="msg.role === 'bot'">
-              <div class="avatar bot-avatar">✦</div>
-              <div class="msg-bubble bot-bubble">
-                <div class="bot-header">
-                  <span class="bot-label">HTML generado</span>
-                  <button class="preview-btn" (click)="openPreview(msg.content)">
-                    👁️ Ver preview
-                  </button>
-                </div>
-                <pre class="code-preview"><code>{{ msg.content.slice(0, 220) }}{{ msg.content.length > 220 ? '\n...' : '' }}</code></pre>
-              </div>
-            </div>
-
-            <!-- Mensaje del USUARIO -->
             <div class="msg-row user-row" *ngIf="msg.role === 'user'">
               <div class="avatar user-avatar">U</div>
               <div class="msg-bubble user-bubble">{{ msg.content }}</div>
             </div>
 
+            <div class="bot-response" *ngIf="msg.role === 'bot'">
+
+              <div class="bot-response-header">
+                <div class="avatar bot-avatar">✦</div>
+                <div class="bot-meta">
+                  <span class="bot-label">Código generado</span>
+                  <span class="bot-timestamp">Generación #{{ i + 1 }}</span>
+                </div>
+                <button
+                  class="preview-btn"
+                  (click)="openPreview(msg.htmlContent, msg.cssContent, msg.tsContent)">
+                  👁️ Ver preview
+                </button>
+              </div>
+
+              <div class="code-block-wrapper">
+                <div class="code-block-header">
+                  <div class="lang-badge html-badge">
+                    <span class="lang-dot"></span>HTML
+                  </div>
+                  <button class="copy-mini-btn" (click)="copyToClipboard(msg.htmlContent)">
+                    📋 Copiar
+                  </button>
+                </div>
+                <pre class="code-preview" #codeBlock><code>{{ msg.htmlContent.slice(0, 300) }}{{ msg.htmlContent.length > 300 ? '\n...' : '' }}</code></pre>
+              </div>
+
+              <div class="code-block-wrapper" *ngIf="msg.cssContent">
+                <div class="code-block-header">
+                  <div class="lang-badge css-badge">
+                    <span class="lang-dot"></span>CSS
+                  </div>
+                  <button class="copy-mini-btn" (click)="copyToClipboard(msg.cssContent)">
+                    📋 Copiar
+                  </button>
+                </div>
+                <pre class="code-preview" #codeBlock><code>{{ msg.cssContent.slice(0, 300) }}{{ msg.cssContent.length > 300 ? '\n...' : '' }}</code></pre>
+              </div>
+
+              <div class="code-block-wrapper" *ngIf="msg.tsContent">
+                <div class="code-block-header">
+                  <div class="lang-badge ts-badge">
+                    <span class="lang-dot"></span>TypeScript
+                  </div>
+                  <button class="copy-mini-btn" (click)="copyToClipboard(msg.tsContent)">
+                    📋 Copiar
+                  </button>
+                </div>
+                <pre class="code-preview" #codeBlock><code>{{ msg.tsContent.slice(0, 300) }}{{ msg.tsContent.length > 300 ? '\n...' : '' }}</code></pre>
+              </div>
+
+            </div>
           </ng-container>
 
-          <!-- Loading indicator -->
           <div class="msg-row" *ngIf="isLoading">
             <div class="avatar bot-avatar">✦</div>
             <div class="msg-bubble bot-bubble loading-bubble">
@@ -76,10 +112,7 @@
           </div>
         </div>
 
-        <!-- INPUT AREA -->
         <div class="chat-input-area">
-
-          <!-- Preview de imagen adjunta -->
           <div class="attached-preview" *ngIf="selectedImage && imagePreview">
             <img [src]="imagePreview" class="attached-img" alt="preview" />
             <div class="attached-info">
@@ -90,16 +123,22 @@
 
           <div class="input-box">
             <label class="upload-btn" for="fileInput">📎 Subir imagen</label>
-            <input id="fileInput" type="file" accept="image/*" (change)="onFileSelected($event)" style="display:none" />
-
+            <input
+              id="fileInput"
+              type="file"
+              accept="image/*"
+              (change)="onFileSelected($event)"
+              style="display: none"
+            />
             <div class="credits-mini">
               <span [class.low]="creditsLeft <= 1">⚡ {{ creditsLeft }}/3</span>
             </div>
-
-            <button
-              class="send-btn"
-              (click)="sendImage()"
-              [disabled]="!selectedImage || isLoading">
+            <textarea
+              [(ngModel)]="userInstruction"
+              placeholder="Describe lo que quieres generar..."
+              class="instruction-input"
+            ></textarea>
+            <button class="send-btn" (click)="sendImage()" [disabled]="!selectedImage || isLoading">
               {{ isLoading ? 'Generando...' : 'Generar código' }}
             </button>
           </div>
@@ -107,67 +146,104 @@
           <p class="input-hint">JPG, PNG o WEBP · {{ creditsLeft }} generaciones gratuitas restantes</p>
         </div>
 
-      </div><!-- fin chat-column -->
+      </div>
+      <div class="right-panel">
 
-      <!-- COLUMNA DERECHA: Panel de Previsualización -->
-      <div class="preview-panel" *ngIf="showPreview">
-        <div class="preview-header">
-          <div class="preview-tabs">
-            <button [class.active]="previewTab === 'code'" (click)="previewTab = 'code'">📄 Código</button>
-            <button [class.active]="previewTab === 'preview'" (click)="previewTab = 'preview'">🖥️ Vista previa</button>
+        <div class="preview-empty" *ngIf="!showPreview">
+          <div class="preview-empty-icon">🖥️</div>
+          <p class="preview-empty-title">Sin previsualización</p>
+          <p class="preview-empty-desc">Genera código desde una imagen para ver el resultado aquí</p>
+        </div>
+
+        <div class="preview-container" *ngIf="showPreview">
+
+          <div class="preview-header">
+            <div class="preview-tabs">
+              <button [class.active]="previewTab === 'preview'" (click)="previewTab = 'preview'">
+                🖥️ Vista previa
+              </button>
+              <button [class.active]="previewTab === 'html'" (click)="previewTab = 'html'">
+                📄 HTML
+              </button>
+              <button [class.active]="previewTab === 'css'" (click)="previewTab = 'css'">
+                🎨 CSS
+              </button>
+              <button [class.active]="previewTab === 'ts'" (click)="previewTab = 'ts'">
+                🔷 TS
+              </button>
+            </div>
+            <div class="preview-actions">
+              <button class="action-btn" (click)="copyCode()" [title]="copySuccess ? '¡Copiado!' : 'Copiar'">
+                {{ copySuccess ? '✅' : '📋' }}
+              </button>
+              <button class="action-btn" (click)="openInNewTab()" title="Abrir en nueva pestaña">
+                ↗️
+              </button>
+              <button class="close-btn" (click)="closePreview()">✕</button>
+            </div>
           </div>
-          <div class="preview-actions">
-            <button class="action-btn" (click)="copyCode()" [title]="copySuccess ? '¡Copiado!' : 'Copiar código'">
-              {{ copySuccess ? '✅' : '📋' }}
-            </button>
-            <button class="action-btn" (click)="openInNewTab()" title="Abrir en nueva pestaña">↗️</button>
-            <button class="close-btn" (click)="closePreview()">✕</button>
+
+          <div class="preview-body">
+
+            <iframe
+              *ngIf="previewTab === 'preview'"
+              [src]="previewIframeSrc"
+              class="preview-iframe"
+              title="Vista previa"
+              sandbox="allow-scripts allow-same-origin"
+            ></iframe>
+
+            <div class="code-view" *ngIf="previewTab === 'html'">
+              <div class="code-view-header">
+                <div class="lang-badge html-badge"><span class="lang-dot"></span>HTML</div>
+                <span class="line-count">{{ getLineCount(previewHtmlContent) }} líneas</span>
+              </div>
+              <pre class="full-code code-reveal"><code>{{ previewHtmlContent }}</code></pre>
+            </div>
+
+            <div class="code-view" *ngIf="previewTab === 'css'">
+              <div class="code-view-header">
+                <div class="lang-badge css-badge"><span class="lang-dot"></span>CSS</div>
+                <span class="line-count">{{ getLineCount(previewCssContent) }} líneas</span>
+              </div>
+              <pre class="full-code code-reveal"><code>{{ previewCssContent }}</code></pre>
+            </div>
+
+            <div class="code-view" *ngIf="previewTab === 'ts'">
+              <div class="code-view-header">
+                <div class="lang-badge ts-badge"><span class="lang-dot"></span>TypeScript</div>
+                <span class="line-count">{{ getLineCount(previewTsContent) }} líneas</span>
+              </div>
+              <pre class="full-code code-reveal"><code>{{ previewTsContent }}</code></pre>
+            </div>
+
           </div>
         </div>
 
-        <div class="preview-body">
-          <pre class="full-code" *ngIf="previewTab === 'code'"><code>{{ previewCode }}</code></pre>
-          <iframe
-            *ngIf="previewTab === 'preview'"
-            [src]="previewIframeSrc"
-            class="preview-iframe"
-            title="Vista previa"
-            sandbox="allow-scripts allow-same-origin">
-          </iframe>
-        </div>
       </div>
 
-    </div><!-- fin chat-layout -->
+    </div>
+
   </div>
 </div>
 
-<!-- ===== MODAL: CRÉDITOS AGOTADOS ===== -->
 <div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
   <div class="modal-card" (click)="$event.stopPropagation()">
-
     <div class="modal-icon">⚡</div>
-
     <h2 class="modal-title">Créditos gratuitos agotados</h2>
     <p class="modal-desc">
-      Has utilizado tus <strong>3 generaciones gratuitas</strong>.<br>
+      Has utilizado tus <strong>3 generaciones gratuitas</strong>.<br />
       Inicia sesión o crea una cuenta para continuar sin límites.
     </p>
-
     <div class="modal-perks">
       <div class="perk">✅ Generaciones ilimitadas</div>
-      <div class="perk">✅ Exportar HTML + CSS</div>
+      <div class="perk">✅ Exportar HTML + CSS + TS</div>
       <div class="perk">✅ Historial de proyectos</div>
     </div>
-
     <div class="modal-buttons">
-      <button class="modal-btn primary" (click)="goToRegister()">
-        🚀 Crear cuenta gratis
-      </button>
-      <button class="modal-btn secondary" (click)="goToLogin()">
-        Iniciar sesión
-      </button>
+      <button class="modal-btn primary" (click)="goToRegister()">🚀 Crear cuenta gratis</button>
+      <button class="modal-btn secondary" (click)="goToLogin()">Iniciar sesión</button>
     </div>
-
     <button class="modal-close" (click)="closeModal()">✕</button>
   </div>
 </div>
