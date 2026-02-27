@@ -1,81 +1,107 @@
 <div class="app-shell">
 
-  <!-- Sidebar historial estilo ChatGPT -->
-  <aside class="sidebar" [class.collapsed]="sidebarCollapsed">
+  <!-- Sidebar -->
+  <aside class="sidebar" [class.collapsed]="sidebarCollapsed()">
     <div class="sidebar-header">
       <div class="ai-brand">
         <div class="ai-logo">✦</div>
-        <span class="ai-title" *ngIf="!sidebarCollapsed">CodeVision</span>
+        @if (!sidebarCollapsed()) {
+          <span class="ai-title">CodeVision</span>
+        }
       </div>
-      <button class="sidebar-toggle" (click)="sidebarCollapsed = !sidebarCollapsed" [title]="sidebarCollapsed ? 'Expandir' : 'Colapsar'">
-        {{ sidebarCollapsed ? '›' : '‹' }}
+      <button
+        class="sidebar-toggle"
+        (click)="sidebarCollapsed.set(!sidebarCollapsed())"
+        [title]="sidebarCollapsed() ? 'Expandir' : 'Colapsar'">
+        {{ sidebarCollapsed() ? '›' : '‹' }}
       </button>
     </div>
 
-    <button class="new-chat-btn" (click)="newChat()" *ngIf="!sidebarCollapsed">
-      <span>✦</span> Nueva generación
-    </button>
-    <button class="new-chat-btn icon-only" (click)="newChat()" *ngIf="sidebarCollapsed" title="Nueva generación">
-      ✦
-    </button>
-
-    <div class="sidebar-history" *ngIf="!sidebarCollapsed">
-      <p class="sidebar-section-label" *ngIf="historyGroups.today.length > 0">Hoy</p>
-      <button
-        class="history-item"
-        *ngFor="let item of historyGroups.today"
-        [class.active]="selectedHistoryId === item.id"
-        (click)="loadHistoryItem(item)">
-        <span class="history-item-icon">🖼️</span>
-        <span class="history-item-label">{{ item.label }}</span>
-        <span class="history-item-time">{{ item.timestamp | date:'HH:mm' }}</span>
+    @if (!sidebarCollapsed()) {
+      <button class="new-chat-btn" (click)="newChat()">
+        <span>✦</span> Nueva generación
       </button>
+    } @else {
+      <button class="new-chat-btn icon-only" (click)="newChat()" title="Nueva generación">✦</button>
+    }
 
-      <p class="sidebar-section-label" *ngIf="historyGroups.yesterday.length > 0">Ayer</p>
-      <button
-        class="history-item"
-        *ngFor="let item of historyGroups.yesterday"
-        [class.active]="selectedHistoryId === item.id"
-        (click)="loadHistoryItem(item)">
-        <span class="history-item-icon">🖼️</span>
-        <span class="history-item-label">{{ item.label }}</span>
-      </button>
+    @if (!sidebarCollapsed()) {
+      @if (currentUser()) {
+        <div class="sidebar-history">
+          @if (historyGroups().today.length > 0) {
+            <p class="sidebar-section-label">Hoy</p>
+            @for (item of historyGroups().today; track item.id) {
+              <button
+                class="history-item"
+                [class.active]="selectedHistoryId() === item.id"
+                (click)="loadHistoryItem(item)">
+                <span class="history-item-icon">🖼️</span>
+                <span class="history-item-label">{{ item.label }}</span>
+                <span class="history-item-time">{{ item.timestamp | date:'HH:mm' }}</span>
+              </button>
+            }
+          }
 
-      <p class="sidebar-section-label" *ngIf="historyGroups.older.length > 0">Anteriores</p>
-      <button
-        class="history-item"
-        *ngFor="let item of historyGroups.older"
-        [class.active]="selectedHistoryId === item.id"
-        (click)="loadHistoryItem(item)">
-        <span class="history-item-icon">🖼️</span>
-        <span class="history-item-label">{{ item.label }}</span>
-      </button>
+          @if (historyGroups().yesterday.length > 0) {
+            <p class="sidebar-section-label">Ayer</p>
+            @for (item of historyGroups().yesterday; track item.id) {
+              <button
+                class="history-item"
+                [class.active]="selectedHistoryId() === item.id"
+                (click)="loadHistoryItem(item)">
+                <span class="history-item-icon">🖼️</span>
+                <span class="history-item-label">{{ item.label }}</span>
+              </button>
+            }
+          }
 
-      <div class="sidebar-empty" *ngIf="historyGroups.today.length === 0 && historyGroups.yesterday.length === 0 && historyGroups.older.length === 0">
-        <span>🗂️</span>
-        <p>Sin historial aún</p>
-      </div>
-    </div>
+          @if (historyGroups().older.length > 0) {
+            <p class="sidebar-section-label">Anteriores</p>
+            @for (item of historyGroups().older; track item.id) {
+              <button
+                class="history-item"
+                [class.active]="selectedHistoryId() === item.id"
+                (click)="loadHistoryItem(item)">
+                <span class="history-item-icon">🖼️</span>
+                <span class="history-item-label">{{ item.label }}</span>
+              </button>
+            }
+          }
 
-    <div class="sidebar-footer" *ngIf="!sidebarCollapsed">
-      <ng-container *ngIf="currentUser">
-        <div class="user-info">
-          <span class="user-avatar-icon">👤</span>
-          <span class="user-email">{{ currentUser.email }}</span>
+          @if (historyGroups().today.length === 0 && historyGroups().yesterday.length === 0 && historyGroups().older.length === 0) {
+            <div class="sidebar-empty">
+              <span>🗂️</span>
+              <p>Sin historial aún</p>
+            </div>
+          }
         </div>
-        <button class="logout-btn" (click)="logout()">🚪 Salir</button>
-      </ng-container>
-      <ng-container *ngIf="!currentUser && !isAuthLoading">
-        <button class="nav-login-btn" (click)="goToLogin()">Iniciar sesión</button>
-        <button class="nav-register-btn" (click)="goToRegister()">Registrarse</button>
-      </ng-container>
-    </div>
+      } @else if (!isAuthLoading()) {
+        <div class="sidebar-history">
+          <div class="sidebar-empty sidebar-empty--auth">
+            <span>🔒</span>
+            <p>Inicia sesión para ver tu historial</p>
+          </div>
+        </div>
+      }
+
+      <div class="sidebar-footer">
+        @if (currentUser()) {
+          <div class="user-info">
+            <span class="user-avatar-icon">👤</span>
+            <span class="user-email">{{ currentUser()!.email }}</span>
+          </div>
+          <button class="logout-btn" (click)="logout()">🚪 Salir</button>
+        } @else if (!isAuthLoading()) {
+          <button class="nav-login-btn" (click)="goToLogin()">Iniciar sesión</button>
+          <button class="nav-register-btn" (click)="goToRegister()">Registrarse</button>
+        }
+      </div>
+    }
   </aside>
 
   <!-- Área principal -->
   <div class="chat-main">
 
-    <!-- Topbar compacto -->
     <div class="chat-topbar">
       <div class="topbar-left">
         <div class="ai-status">
@@ -84,23 +110,23 @@
         </div>
       </div>
       <div class="topbar-right">
-        <div class="credits-badge" [class.low]="creditsLeft <= 1">
+        <div class="credits-badge" [class.low]="creditsLeft() <= 1">
           <span>⚡</span>
-          {{ creditsLeft }} crédito{{ creditsLeft !== 1 ? 's' : '' }}
+          {{ creditsLeft() }} crédito{{ creditsLeft() !== 1 ? 's' : '' }}
         </div>
-        <ng-container *ngIf="!currentUser && !isAuthLoading">
+        @if (!currentUser() && !isAuthLoading()) {
           <button class="nav-login-btn" (click)="goToLogin()">Iniciar sesión</button>
           <button class="nav-register-btn" (click)="goToRegister()">Registrarse</button>
-        </ng-container>
+        }
       </div>
     </div>
 
-    <div class="main-layout">
+    <div class="main-layout" [class.preview-open]="showPreview()">
 
       <!-- Panel chat -->
       <div class="left-panel">
 
-        <ng-container *ngIf="messages.length === 0 && !isLoading">
+        @if (messages().length === 0 && !isLoading()) {
           <div class="welcome-state">
             <div class="welcome-icon">🖼️</div>
             <h2 class="welcome-title">Convierte tu diseño en código</h2>
@@ -113,159 +139,213 @@
               <span class="chip">🎨 CSS separado</span>
               <span class="chip">🔷 TypeScript</span>
             </div>
-            <div class="guest-banner" *ngIf="!currentUser && !isAuthLoading">
-              <p>🔒 <strong>Inicia sesión</strong> para obtener 25 créditos y guardar tu historial</p>
-              <div class="guest-banner-btns">
-                <button (click)="goToRegister()">Crear cuenta gratis</button>
-                <button class="ghost" (click)="goToLogin()">Iniciar sesión</button>
+            @if (!currentUser() && !isAuthLoading()) {
+              <div class="guest-banner">
+                <p>🔒 <strong>Inicia sesión</strong> para obtener 25 créditos y guardar tu historial</p>
+                <div class="guest-banner-btns">
+                  <button (click)="goToRegister()">Crear cuenta gratis</button>
+                  <button class="ghost" (click)="goToLogin()">Iniciar sesión</button>
+                </div>
               </div>
-            </div>
+            }
           </div>
-        </ng-container>
+        }
 
         <div class="chat-messages" #chatMessages>
-          <ng-container *ngFor="let msg of messages; let i = index">
+          @for (msg of messages(); track $index; let i = $index) {
+            @if (msg.role === 'user') {
+              <div class="msg-row user-row">
+                <div class="avatar user-avatar">U</div>
+                <div class="msg-bubble user-bubble">{{ msg.content }}</div>
+              </div>
+            }
 
-            <div class="msg-row user-row" *ngIf="msg.role === 'user'">
-              <div class="avatar user-avatar">U</div>
-              <div class="msg-bubble user-bubble">{{ msg.content }}</div>
+            @if (msg.role === 'bot') {
+              <div class="bot-response">
+                <div class="bot-response-header">
+                  <div class="avatar bot-avatar">✦</div>
+                  <div class="bot-meta">
+                    <span class="bot-label">Código generado</span>
+                    <span class="bot-timestamp">
+                      Generación #{{ getBotIndex(i) }}
+                      @if (msg.timestamp) {
+                        · {{ msg.timestamp | date:'shortTime' }}
+                      }
+                    </span>
+                  </div>
+                  <button class="preview-btn" (click)="openPreview(msg.htmlContent, msg.cssContent, msg.tsContent)">
+                    👁️ Ver preview
+                  </button>
+                </div>
+
+                <!-- HTML block -->
+                <div class="code-block-wrapper">
+                  <div class="code-block-header">
+                    <div class="lang-badge html-badge"><span class="lang-dot"></span>HTML</div>
+                    <button class="copy-mini-btn" (click)="copyToClipboard(msg.htmlContent)">📋 Copiar</button>
+                  </div>
+                  <pre class="code-preview"
+                    [class.is-typing]="msg.isTyping && msg.typingStep === 'html'"
+                    [class.typing-done]="!msg.isTyping || msg.typingStep !== 'html'"><code>{{ getVisibleCode(msg, 'html') }}{{ msg.isTyping && msg.typingStep === 'html' ? '█' : '' }}</code></pre>
+                </div>
+
+                <!-- CSS block -->
+                @if (msg.cssContent) {
+                  <div class="code-block-wrapper">
+                    <div class="code-block-header">
+                      <div class="lang-badge css-badge"><span class="lang-dot"></span>CSS</div>
+                      <button class="copy-mini-btn" (click)="copyToClipboard(msg.cssContent)">📋 Copiar</button>
+                    </div>
+                    <pre class="code-preview"
+                      [class.is-typing]="msg.isTyping && msg.typingStep === 'css'"
+                      [class.typing-done]="!msg.isTyping || msg.typingStep !== 'css'"><code>{{ getVisibleCode(msg, 'css') }}{{ msg.isTyping && msg.typingStep === 'css' ? '█' : '' }}</code></pre>
+                  </div>
+                }
+
+                <!-- TS block -->
+                @if (msg.tsContent) {
+                  <div class="code-block-wrapper">
+                    <div class="code-block-header">
+                      <div class="lang-badge ts-badge"><span class="lang-dot"></span>TypeScript</div>
+                      <button class="copy-mini-btn" (click)="copyToClipboard(msg.tsContent)">📋 Copiar</button>
+                    </div>
+                    <pre class="code-preview"
+                      [class.is-typing]="msg.isTyping && msg.typingStep === 'ts'"
+                      [class.typing-done]="!msg.isTyping || msg.typingStep !== 'ts'"><code>{{ getVisibleCode(msg, 'ts') }}{{ msg.isTyping && msg.typingStep === 'ts' ? '█' : '' }}</code></pre>
+                  </div>
+                }
+              </div>
+            }
+          }
+
+          @if (isLoading()) {
+            <div class="msg-row">
+              <div class="avatar bot-avatar">✦</div>
+              <div class="msg-bubble bot-bubble loading-bubble">
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="loading-text">Analizando imagen...</span>
+              </div>
             </div>
-
-            <div class="bot-response" *ngIf="msg.role === 'bot'">
-              <div class="bot-response-header">
-                <div class="avatar bot-avatar">✦</div>
-                <div class="bot-meta">
-                  <span class="bot-label">Código generado</span>
-                  <span class="bot-timestamp">
-                    Generación #{{ getBotIndex(i) }}
-                    <span *ngIf="msg.timestamp"> · {{ msg.timestamp | date:'shortTime' }}</span>
-                  </span>
-                </div>
-                <button class="preview-btn" (click)="openPreview(msg.htmlContent, msg.cssContent, msg.tsContent)">
-                  👁️ Ver preview
-                </button>
-              </div>
-
-              <!-- HTML block -->
-              <div class="code-block-wrapper">
-                <div class="code-block-header">
-                  <div class="lang-badge html-badge"><span class="lang-dot"></span>HTML</div>
-                  <button class="copy-mini-btn" (click)="copyToClipboard(msg.htmlContent)">📋 Copiar</button>
-                </div>
-                <pre class="code-preview" [class.is-typing]="msg.isTyping && msg.typingStep === 'html'" [class.typing-done]="!msg.isTyping || msg.typingStep !== 'html'"><code>{{ getVisibleCode(msg, 'html') }}{{ msg.isTyping && msg.typingStep === 'html' ? '█' : '' }}</code></pre>
-              </div>
-
-              <!-- CSS block -->
-              <div class="code-block-wrapper" *ngIf="msg.cssContent">
-                <div class="code-block-header">
-                  <div class="lang-badge css-badge"><span class="lang-dot"></span>CSS</div>
-                  <button class="copy-mini-btn" (click)="copyToClipboard(msg.cssContent)">📋 Copiar</button>
-                </div>
-                <pre class="code-preview" [class.is-typing]="msg.isTyping && msg.typingStep === 'css'" [class.typing-done]="!msg.isTyping || msg.typingStep !== 'css'"><code>{{ getVisibleCode(msg, 'css') }}{{ msg.isTyping && msg.typingStep === 'css' ? '█' : '' }}</code></pre>
-              </div>
-
-              <!-- TS block -->
-              <div class="code-block-wrapper" *ngIf="msg.tsContent">
-                <div class="code-block-header">
-                  <div class="lang-badge ts-badge"><span class="lang-dot"></span>TypeScript</div>
-                  <button class="copy-mini-btn" (click)="copyToClipboard(msg.tsContent)">📋 Copiar</button>
-                </div>
-                <pre class="code-preview" [class.is-typing]="msg.isTyping && msg.typingStep === 'ts'" [class.typing-done]="!msg.isTyping || msg.typingStep !== 'ts'"><code>{{ getVisibleCode(msg, 'ts') }}{{ msg.isTyping && msg.typingStep === 'ts' ? '█' : '' }}</code></pre>
-              </div>
-
-            </div>
-          </ng-container>
-
-          <div class="msg-row" *ngIf="isLoading">
-            <div class="avatar bot-avatar">✦</div>
-            <div class="msg-bubble bot-bubble loading-bubble">
-              <span class="dot"></span>
-              <span class="dot"></span>
-              <span class="dot"></span>
-              <span class="loading-text">Analizando imagen...</span>
-            </div>
-          </div>
+          }
         </div>
 
+        <!-- Input -->
         <div class="chat-input-area">
-          <div class="attached-preview" *ngIf="selectedImage && imagePreview">
-            <img [src]="imagePreview" class="attached-img" alt="preview" />
-            <div class="attached-info">
-              <p>{{ selectedImage.name }}</p>
-              <button (click)="removeImage()">✕ Eliminar</button>
+          @if (selectedImage && imagePreview) {
+            <div class="attached-preview">
+              <img [src]="imagePreview" class="attached-img" alt="preview" />
+              <div class="attached-info">
+                <p>{{ selectedImage.name }}</p>
+                <button (click)="removeImage()">✕ Eliminar</button>
+              </div>
             </div>
-          </div>
+          }
 
-          <div class="input-box">
-            <label class="upload-btn" for="fileInput">📎</label>
+          <div class="input-box" [class.has-image]="!!selectedImage">
+            <label class="upload-btn" for="fileInput" title="Adjuntar imagen">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+              </svg>
+            </label>
             <input id="fileInput" type="file" accept="image/*" (change)="onFileSelected($event)" style="display: none" />
-            <div class="credits-mini">
-              <span [class.low]="creditsLeft <= 1">⚡ {{ creditsLeft }}/{{ freeCredits }}</span>
-            </div>
+
             <textarea
               [(ngModel)]="userInstruction"
               placeholder="Describe lo que quieres generar..."
               class="instruction-input"
+              rows="1"
+              (keydown.enter)="$event.preventDefault(); sendImage()"
             ></textarea>
-            <button class="send-btn" (click)="sendImage()" [disabled]="!selectedImage || isLoading">
-              {{ isLoading ? '...' : '→' }}
-            </button>
+
+            <div class="input-actions">
+              <span class="credits-mini" [class.low]="creditsLeft() <= 1">⚡{{ creditsLeft() }}/{{ freeCredits() }}</span>
+              <button
+                class="send-btn"
+                (click)="sendImage()"
+                [disabled]="!selectedImage || isLoading()"
+                [class.ready]="!!selectedImage && !isLoading()">
+                @if (isLoading()) {
+                  <span class="send-spinner"></span>
+                } @else {
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="22" y1="2" x2="11" y2="13"/>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                  </svg>
+                }
+              </button>
+            </div>
           </div>
-          <p class="input-hint">JPG, PNG o WEBP · {{ creditsLeft }} generaciones {{ currentUser ? '' : 'gratuitas ' }}restantes</p>
+          <p class="input-hint">JPG, PNG o WEBP · {{ creditsLeft() }} generaciones {{ currentUser() ? '' : 'gratuitas ' }}restantes · Enter para enviar</p>
         </div>
       </div>
 
       <!-- Panel preview derecho -->
-      <div class="right-panel">
-        <div class="preview-empty" *ngIf="!showPreview">
-          <div class="preview-empty-icon">🖥️</div>
-          <p class="preview-empty-title">Sin previsualización</p>
-          <p class="preview-empty-desc">Genera código desde una imagen para ver el resultado aquí</p>
-        </div>
+      <div class="right-panel" [class.visible]="showPreview()">
+        @if (!showPreview()) {
+          <div class="preview-empty">
+            <div class="preview-empty-icon">🖥️</div>
+            <p class="preview-empty-title">Sin previsualización</p>
+            <p class="preview-empty-desc">Genera código desde una imagen para ver el resultado aquí</p>
+          </div>
+        }
 
-        <div class="preview-container" *ngIf="showPreview">
-          <div class="preview-header">
-            <div class="preview-tabs">
-              <button [class.active]="previewTab === 'preview'" (click)="previewTab = 'preview'">🖥️ Vista previa</button>
-              <button [class.active]="previewTab === 'html'" (click)="previewTab = 'html'">📄 HTML</button>
-              <button [class.active]="previewTab === 'css'" (click)="previewTab = 'css'">🎨 CSS</button>
-              <button [class.active]="previewTab === 'ts'" (click)="previewTab = 'ts'">🔷 TS</button>
+        @if (showPreview()) {
+          <div class="preview-container">
+            <div class="preview-header">
+              <div class="preview-tabs">
+                <button [class.active]="previewTab() === 'preview'" (click)="previewTab.set('preview')">🖥️ Vista</button>
+                <button [class.active]="previewTab() === 'html'" (click)="previewTab.set('html')">HTML</button>
+                <button [class.active]="previewTab() === 'css'" (click)="previewTab.set('css')">CSS</button>
+                <button [class.active]="previewTab() === 'ts'" (click)="previewTab.set('ts')">TS</button>
+              </div>
+              <div class="preview-actions">
+                <button class="action-btn" (click)="copyCode()" [title]="copySuccess() ? '¡Copiado!' : 'Copiar'">
+                  {{ copySuccess() ? '✅' : '📋' }}
+                </button>
+                <button class="action-btn" (click)="openInNewTab()" title="Abrir en nueva pestaña">↗️</button>
+                <button class="close-btn" (click)="closePreview()">✕</button>
+              </div>
             </div>
-            <div class="preview-actions">
-              <button class="action-btn" (click)="copyCode()" [title]="copySuccess ? '¡Copiado!' : 'Copiar'">{{ copySuccess ? '✅' : '📋' }}</button>
-              <button class="action-btn" (click)="openInNewTab()" title="Abrir en nueva pestaña">↗️</button>
-              <button class="close-btn" (click)="closePreview()">✕</button>
+
+            <div class="preview-body">
+              @if (previewTab() === 'preview') {
+                <iframe [src]="previewIframeSrc()" class="preview-iframe" title="Vista previa" sandbox="allow-scripts allow-same-origin"></iframe>
+              }
+
+              @if (previewTab() === 'html') {
+                <div class="code-view">
+                  <div class="code-view-header">
+                    <div class="lang-badge html-badge"><span class="lang-dot"></span>HTML</div>
+                    <span class="line-count">{{ getLineCount(previewHtmlContent()) }} líneas</span>
+                  </div>
+                  <pre class="full-code"><code>{{ previewHtmlContent() }}</code></pre>
+                </div>
+              }
+
+              @if (previewTab() === 'css') {
+                <div class="code-view">
+                  <div class="code-view-header">
+                    <div class="lang-badge css-badge"><span class="lang-dot"></span>CSS</div>
+                    <span class="line-count">{{ getLineCount(previewCssContent()) }} líneas</span>
+                  </div>
+                  <pre class="full-code"><code>{{ previewCssContent() }}</code></pre>
+                </div>
+              }
+
+              @if (previewTab() === 'ts') {
+                <div class="code-view">
+                  <div class="code-view-header">
+                    <div class="lang-badge ts-badge"><span class="lang-dot"></span>TypeScript</div>
+                    <span class="line-count">{{ getLineCount(previewTsContent()) }} líneas</span>
+                  </div>
+                  <pre class="full-code"><code>{{ previewTsContent() }}</code></pre>
+                </div>
+              }
             </div>
           </div>
-
-          <div class="preview-body">
-            <iframe *ngIf="previewTab === 'preview'" [src]="previewIframeSrc" class="preview-iframe" title="Vista previa" sandbox="allow-scripts allow-same-origin"></iframe>
-
-            <div class="code-view" *ngIf="previewTab === 'html'">
-              <div class="code-view-header">
-                <div class="lang-badge html-badge"><span class="lang-dot"></span>HTML</div>
-                <span class="line-count">{{ getLineCount(previewHtmlContent) }} líneas</span>
-              </div>
-              <pre class="full-code"><code>{{ previewHtmlContent }}</code></pre>
-            </div>
-
-            <div class="code-view" *ngIf="previewTab === 'css'">
-              <div class="code-view-header">
-                <div class="lang-badge css-badge"><span class="lang-dot"></span>CSS</div>
-                <span class="line-count">{{ getLineCount(previewCssContent) }} líneas</span>
-              </div>
-              <pre class="full-code"><code>{{ previewCssContent }}</code></pre>
-            </div>
-
-            <div class="code-view" *ngIf="previewTab === 'ts'">
-              <div class="code-view-header">
-                <div class="lang-badge ts-badge"><span class="lang-dot"></span>TypeScript</div>
-                <span class="line-count">{{ getLineCount(previewTsContent) }} líneas</span>
-              </div>
-              <pre class="full-code"><code>{{ previewTsContent }}</code></pre>
-            </div>
-          </div>
-        </div>
+        }
       </div>
 
     </div>
@@ -273,26 +353,29 @@
 </div>
 
 <!-- Modal créditos agotados -->
-<div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
-  <div class="modal-card" (click)="$event.stopPropagation()">
-    <div class="modal-icon">⚡</div>
-    <h2 class="modal-title">Créditos gratuitos agotados</h2>
-    <p class="modal-desc" *ngIf="!currentUser">
-      Has utilizado tus <strong>3 generaciones gratuitas</strong>.<br />
-      Inicia sesión o crea una cuenta para obtener <strong>25 créditos</strong>.
-    </p>
-    <p class="modal-desc" *ngIf="currentUser">
-      Has utilizado tus <strong>25 generaciones</strong> disponibles.
-    </p>
-    <div class="modal-perks" *ngIf="!currentUser">
-      <div class="perk">✅ 25 generaciones incluidas</div>
-      <div class="perk">✅ Exportar HTML + CSS + TS</div>
-      <div class="perk">✅ Historial de proyectos</div>
+@if (showModal()) {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-icon">⚡</div>
+      <h2 class="modal-title">Créditos gratuitos agotados</h2>
+      @if (!currentUser()) {
+        <p class="modal-desc">
+          Has utilizado tus <strong>3 generaciones gratuitas</strong>.<br />
+          Inicia sesión o crea una cuenta para obtener <strong>25 créditos</strong>.
+        </p>
+        <div class="modal-perks">
+          <div class="perk">✅ 25 generaciones incluidas</div>
+          <div class="perk">✅ Exportar HTML + CSS + TS</div>
+          <div class="perk">✅ Historial guardado en la nube</div>
+        </div>
+        <div class="modal-buttons">
+          <button class="modal-btn primary" (click)="goToRegister()">🚀 Crear cuenta gratis</button>
+          <button class="modal-btn secondary" (click)="goToLogin()">Iniciar sesión</button>
+        </div>
+      } @else {
+        <p class="modal-desc">Has utilizado tus <strong>25 generaciones</strong> disponibles.</p>
+      }
+      <button class="modal-close" (click)="closeModal()">✕</button>
     </div>
-    <div class="modal-buttons" *ngIf="!currentUser">
-      <button class="modal-btn primary" (click)="goToRegister()">🚀 Crear cuenta gratis</button>
-      <button class="modal-btn secondary" (click)="goToLogin()">Iniciar sesión</button>
-    </div>
-    <button class="modal-close" (click)="closeModal()">✕</button>
   </div>
-</div>
+}
