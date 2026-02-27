@@ -40,7 +40,6 @@
 *::-webkit-scrollbar-track { background: transparent; }
 *::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 10px; }
 
-/* ─── App Shell ─────────────────────────────────────── */
 
 .app-shell {
   display: flex;
@@ -62,7 +61,6 @@
   z-index: 0;
 }
 
-/* ─── Sidebar ───────────────────────────────────────── */
 
 .sidebar {
   width: var(--sidebar-width);
@@ -292,7 +290,6 @@
 .nav-login-btn { background: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border); }
 .nav-register-btn { background: linear-gradient(135deg, var(--accent), #5a53e8); color: white; }
 
-/* ─── Chat Main ─────────────────────────────────────── */
 
 .chat-main {
   flex: 1;
@@ -369,7 +366,6 @@
   50% { opacity: 0.6; }
 }
 
-/* ─── Main Layout ───────────────────────────────────── */
 
 .main-layout {
   display: grid;
@@ -387,7 +383,6 @@
   min-height: 0;
 }
 
-/* ─── Welcome ───────────────────────────────────────── */
 
 .welcome-state {
   margin: auto;
@@ -437,7 +432,6 @@
   background: rgba(255,255,255,0.05); color: var(--text-secondary); border: 1px solid var(--border);
 }
 
-/* ─── Messages ──────────────────────────────────────── */
 
 .chat-messages {
   flex: 1;
@@ -451,7 +445,6 @@
   min-height: 0;
 }
 
-/* Anchor to bottom */
 .chat-messages > :last-child { margin-bottom: 0; }
 
 .msg-row {
@@ -496,7 +489,6 @@
 }
 .bot-bubble { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary); }
 
-/* ─── Bot Response ──────────────────────────────────── */
 
 .bot-response {
   display: flex;
@@ -527,7 +519,6 @@
 }
 .preview-btn:hover { background: rgba(108,99,255,0.24); transform: translateY(-1px); }
 
-/* ─── Code Blocks ───────────────────────────────────── */
 
 .code-block-wrapper {
   background: #090b12;
@@ -570,7 +561,6 @@
 }
 .copy-mini-btn:hover { background: rgba(255,255,255,0.08); color: var(--text-secondary); }
 
-/* ─── Typing Animation ──────────────────────────────── */
 
 .code-preview {
   padding: 14px 16px;
@@ -593,7 +583,6 @@
 .code-preview.is-typing { max-height: 200px; }
 .code-preview.is-typing code { color: #8badd4; }
 
-/* Loading */
 .loading-bubble { display: flex; align-items: center; gap: 6px; padding: 18px 16px; }
 .dot { width: 7px; height: 7px; background: var(--accent); border-radius: 50%; animation: bounce 1.2s ease infinite; }
 .dot:nth-child(2) { animation-delay: 0.18s; }
@@ -603,8 +592,6 @@
   0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; }
   40% { transform: scale(1.2); opacity: 1; }
 }
-
-/* ─── Input Area ─────────────────────────────────────── */
 
 .chat-input-area {
   padding: 12px 16px 14px;
@@ -696,7 +683,6 @@
 }
 .credits-mini.low { color: var(--danger); font-weight: 600; }
 
-/* ─── Send Button (improved) ───────────────────────── */
 
 .send-btn {
   background: var(--bg-surface);
@@ -750,7 +736,6 @@
   color: var(--text-muted);
 }
 
-/* ─── Right Panel ───────────────────────────────────── */
 
 .right-panel {
   background: #090b12;
@@ -871,7 +856,6 @@
   margin: 0;
 }
 
-/* ─── Modal ─────────────────────────────────────────── */
 
 .modal-overlay {
   position: fixed;
@@ -921,7 +905,6 @@
 .modal-close { position: absolute; top: 14px; right: 14px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text-muted); width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 12px; font-weight: 700; transition: all 0.2s; }
 .modal-close:hover { background: rgba(255,255,255,0.09); color: var(--text-primary); }
 
-/* ─── Responsive ────────────────────────────────────── */
 
 @media (max-width: 1200px) {
   .main-layout {
@@ -937,7 +920,6 @@
     grid-template-columns: 1fr;
   }
 
-  /* Right panel becomes an overlay when visible */
   .right-panel {
     display: none;
   }
@@ -955,7 +937,6 @@
     to   { transform: translateY(0); }
   }
 
-  /* Sidebar overlay on mobile */
   .sidebar {
     position: fixed;
     left: 0;

@@ -1,6 +1,5 @@
 <div class="app-shell">
 
-  <!-- Sidebar -->
   <aside class="sidebar" [class.collapsed]="sidebarCollapsed()">
     <div class="sidebar-header">
       <div class="ai-brand">
@@ -99,7 +98,6 @@
     }
   </aside>
 
-  <!-- Área principal -->
   <div class="chat-main">
 
     <div class="chat-topbar">
@@ -123,7 +121,6 @@
 
     <div class="main-layout" [class.preview-open]="showPreview()">
 
-      <!-- Panel chat -->
       <div class="left-panel">
 
         @if (messages().length === 0 && !isLoading()) {
@@ -178,7 +175,6 @@
                   </button>
                 </div>
 
-                <!-- HTML block -->
                 <div class="code-block-wrapper">
                   <div class="code-block-header">
                     <div class="lang-badge html-badge"><span class="lang-dot"></span>HTML</div>
@@ -189,7 +185,6 @@
                     [class.typing-done]="!msg.isTyping || msg.typingStep !== 'html'"><code>{{ getVisibleCode(msg, 'html') }}{{ msg.isTyping && msg.typingStep === 'html' ? '█' : '' }}</code></pre>
                 </div>
 
-                <!-- CSS block -->
                 @if (msg.cssContent) {
                   <div class="code-block-wrapper">
                     <div class="code-block-header">
@@ -202,7 +197,6 @@
                   </div>
                 }
 
-                <!-- TS block -->
                 @if (msg.tsContent) {
                   <div class="code-block-wrapper">
                     <div class="code-block-header">
@@ -231,7 +225,6 @@
           }
         </div>
 
-        <!-- Input -->
         <div class="chat-input-area">
           @if (selectedImage && imagePreview) {
             <div class="attached-preview">
@@ -281,7 +274,6 @@
         </div>
       </div>
 
-      <!-- Panel preview derecho -->
       <div class="right-panel" [class.visible]="showPreview()">
         @if (!showPreview()) {
           <div class="preview-empty">
@@ -352,7 +344,6 @@
   </div>
 </div>
 
-<!-- Modal créditos agotados -->
 @if (showModal()) {
   <div class="modal-overlay" (click)="closeModal()">
     <div class="modal-card" (click)="$event.stopPropagation()">

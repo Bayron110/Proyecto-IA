@@ -52,11 +52,8 @@ interface HistoryGroups {
   styleUrls: ['./home.css'],
 })
 export class Home implements OnInit {
-  // ─── DI ─────────────────────────────────────────────────
   private auth = inject(Auth);
   private db = inject(Database);
-
-  // ─── Signals ────────────────────────────────────────────
   currentUser = signal<User | null>(null);
   isAuthLoading = signal(true);
   messages = signal<ChatMessage[]>([]);
@@ -78,7 +75,6 @@ export class Home implements OnInit {
   imagePreview: string | ArrayBuffer | null = null;
   usedCredits = signal(0);
 
-  // ─── Computed ────────────────────────────────────────────
   freeCredits = computed(() => (this.currentUser() ? 25 : 3));
   creditsLeft = computed(() => this.freeCredits() - this.usedCredits());
 
@@ -97,7 +93,6 @@ export class Home implements OnInit {
     };
   });
 
-  // ─── Misc ─────────────────────────────────────────────────
   private readonly CHARS_PER_TICK = 10;
   private readonly TICK_MS = 16;
   @ViewChild('chatMessages') chatMessagesRef!: ElementRef;
@@ -123,7 +118,6 @@ export class Home implements OnInit {
     });
   }
 
-  // ─── History (Firebase Realtime DB) ───────────────────────
 
   private async loadHistoryFromDB(uid: string): Promise<void> {
     try {
@@ -139,7 +133,6 @@ export class Home implements OnInit {
               ...m,
               id: m.id || `hist_${id}_${i}`,
               timestamp: m.timestamp ? new Date(m.timestamp) : undefined,
-              // Reset typing state when loading from DB
               isTyping: false,
               typingStep: 'done' as const,
               visibleHtml: undefined,
@@ -218,7 +211,6 @@ export class Home implements OnInit {
     return this.messages().slice(0, msgIndex + 1).filter(m => m.role === 'bot').length;
   }
 
-  // ─── Auth ──────────────────────────────────────────────────
 
   async logout(): Promise<void> {
     await signOut(this.auth);
@@ -231,7 +223,6 @@ export class Home implements OnInit {
   goToLogin(): void { window.location.href = '/Login'; }
   goToRegister(): void { window.location.href = '/Registro'; }
 
-  // ─── File ─────────────────────────────────────────────────
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -249,7 +240,6 @@ export class Home implements OnInit {
     this.imagePreview = null;
   }
 
-  // ─── Generación ────────────────────────────────────────────
 
   sendImage(): void {
     if (!this.selectedImage) return;
@@ -305,23 +295,18 @@ export class Home implements OnInit {
           visibleTs: '',
         };
 
-        // 1. Add message to array
         this.messages.update(msgs => [...msgs, newMsg]);
 
-        // 2. Open preview
         this.openPreview(html, css, ts);
 
-        // 3. Reset UI state
         this.isLoading.set(false);
         this.selectedImage = null;
         this.imagePreview = null;
         this.userInstruction = '';
         this.scrollToBottom();
 
-        // 4. Save history AFTER animation starts (avoid overwriting signal)
         setTimeout(() => this.saveToHistory(), 100);
 
-        // 5. Start typing animation - uses id to find and update msg in signal
         this.startTypingAnimation(newMsg);
       },
       error: (err) => {
@@ -357,10 +342,8 @@ export class Home implements OnInit {
     }
   }
 
-  // ─── Typing Animation ──────────────────────────────────────
 
   getVisibleCode(msg: ChatMessage, field: 'html' | 'css' | 'ts'): string {
-    // Always read from the signal to get the latest state
     const live = this.messages().find(m => m.id === msg.id) ?? msg;
 
     const content = field === 'html' ? live.htmlContent
@@ -395,7 +378,6 @@ export class Home implements OnInit {
     this.messages.update(msgs =>
       msgs.map(m => m.id === target.id ? { ...m, ...patch } : m)
     );
-    // Keep target in sync so animation callbacks work
     Object.assign(target, patch);
   }
 
@@ -418,7 +400,6 @@ export class Home implements OnInit {
   ): void {
     if (!fullText) { onDone(); return; }
 
-    // Update step indicator
     this.updateMsg(msg, { typingStep: field });
 
     const preview = fullText.length > 400 ? fullText.slice(0, 400) : fullText;
@@ -457,7 +438,6 @@ export class Home implements OnInit {
     }, 50);
   }
 
-  // ─── Preview ───────────────────────────────────────────────
 
   openPreview(html: string, css: string, ts: string): void {
     this.previewHtmlContent.set(html);
