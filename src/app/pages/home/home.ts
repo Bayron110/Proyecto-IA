@@ -7,14 +7,13 @@ import {
   inject,
   signal,
   computed,
-  effect,
 } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Auth, onAuthStateChanged, signOut, User } from '@angular/fire/auth';
-import { Database, ref, set, get, child, push } from '@angular/fire/database';
+import { Database, ref, set, get, child } from '@angular/fire/database';
 
 interface ChatMessage {
   id: string;
@@ -23,9 +22,9 @@ interface ChatMessage {
   htmlContent: string;
   cssContent: string;
   tsContent: string;
-  timestamp?: Date;
+  timestamp?: Date | string | null;
   isTyping?: boolean;
-  typingStep?: 'html' | 'css' | 'ts' | 'done';
+  typingStep?: 'html' | 'css' | 'ts' | 'done' | null;
   visibleHtml?: string;
   visibleCss?: string;
   visibleTs?: string;
@@ -54,6 +53,7 @@ interface HistoryGroups {
 export class Home implements OnInit {
   private auth = inject(Auth);
   private db = inject(Database);
+
   currentUser = signal<User | null>(null);
   isAuthLoading = signal(true);
   messages = signal<ChatMessage[]>([]);
@@ -83,6 +83,7 @@ export class Home implements OnInit {
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const yesterdayStart = new Date(todayStart.getTime() - 86400000);
     const items = this.historyItems();
+
     return {
       today: items.filter(h => new Date(h.timestamp) >= todayStart),
       yesterday: items.filter(h => {
@@ -95,6 +96,7 @@ export class Home implements OnInit {
 
   private readonly CHARS_PER_TICK = 10;
   private readonly TICK_MS = 16;
+
   @ViewChild('chatMessages') chatMessagesRef!: ElementRef;
 
   constructor(
@@ -114,38 +116,70 @@ export class Home implements OnInit {
         this.messages.set([]);
         this.usedCredits.set(0);
         this.historyItems.set([]);
+        this.selectedHistoryId.set(null);
       }
     });
   }
 
-
   private async loadHistoryFromDB(uid: string): Promise<void> {
     try {
       const snapshot = await get(child(ref(this.db), `history/${uid}`));
+
       if (snapshot.exists()) {
         const data = snapshot.val();
-        const items: HistoryItem[] = Object.entries(data)
-          .map(([id, val]: [string, any]) => ({
-            id,
-            label: val.label,
-            timestamp: new Date(val.timestamp),
-            messages: (val.messages || []).map((m: any, i: number) => ({
-              ...m,
-              id: m.id || `hist_${id}_${i}`,
-              timestamp: m.timestamp ? new Date(m.timestamp) : undefined,
-              isTyping: false,
-              typingStep: 'done' as const,
-              visibleHtml: undefined,
-              visibleCss: undefined,
-              visibleTs: undefined,
-            })),
-          }))
-          .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+        const rawItems: HistoryItem[] = Array.isArray(data)
+          ? data
+              .filter((val: any) => val)
+              .map((val: any, index: number) => ({
+                id: val.id || `session_${index}`,
+                label: val.label || 'Generación',
+                timestamp: val.timestamp ? new Date(val.timestamp) : new Date(),
+                messages: (val.messages || []).map((m: any, i: number) => ({
+                  id: m.id || `hist_${index}_${i}`,
+                  role: m.role || 'user',
+                  content: m.content || '',
+                  htmlContent: m.htmlContent || '',
+                  cssContent: m.cssContent || '',
+                  tsContent: m.tsContent || '',
+                  timestamp: m.timestamp ? new Date(m.timestamp) : null,
+                  isTyping: false,
+                  typingStep: 'done',
+                  visibleHtml: m.visibleHtml || '',
+                  visibleCss: m.visibleCss || '',
+                  visibleTs: m.visibleTs || '',
+                })),
+              }))
+          : Object.entries(data).map(([id, val]: [string, any]) => ({
+              id,
+              label: val.label || 'Generación',
+              timestamp: val.timestamp ? new Date(val.timestamp) : new Date(),
+              messages: (val.messages || []).map((m: any, i: number) => ({
+                id: m.id || `hist_${id}_${i}`,
+                role: m.role || 'user',
+                content: m.content || '',
+                htmlContent: m.htmlContent || '',
+                cssContent: m.cssContent || '',
+                tsContent: m.tsContent || '',
+                timestamp: m.timestamp ? new Date(m.timestamp) : null,
+                isTyping: false,
+                typingStep: 'done',
+                visibleHtml: m.visibleHtml || '',
+                visibleCss: m.visibleCss || '',
+                visibleTs: m.visibleTs || '',
+              })),
+            }));
+
+        const items = rawItems.sort(
+          (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
+        );
 
         this.historyItems.set(items);
+
         if (items.length > 0) {
           this.messages.set(items[0].messages);
           this.selectedHistoryId.set(items[0].id);
+
           const totalBotMsgs = items.reduce(
             (sum, h) => sum + h.messages.filter(m => m.role === 'bot').length,
             0
@@ -158,25 +192,82 @@ export class Home implements OnInit {
     }
   }
 
-  private async saveHistoryToDB(): Promise<void> {
+  private sanitizeMessagesForSave(messages: ChatMessage[]): any[] {
+    return messages.map(m => ({
+      id: m.id ?? '',
+      role: m.role ?? 'user',
+      content: m.content ?? '',
+      htmlContent: m.htmlContent ?? '',
+      cssContent: m.cssContent ?? '',
+      tsContent: m.tsContent ?? '',
+      timestamp:
+        m.timestamp instanceof Date
+          ? m.timestamp.toISOString()
+          : (m.timestamp ?? null),
+      isTyping: m.isTyping ?? false,
+      typingStep: m.typingStep ?? null,
+      visibleHtml: m.visibleHtml ?? '',
+      visibleCss: m.visibleCss ?? '',
+      visibleTs: m.visibleTs ?? '',
+    }));
+  }
+
+  private saveHistoryToDB(): void {
     const user = this.currentUser();
     if (!user) return;
-    try {
-      const items = this.historyItems();
-      const data: Record<string, any> = {};
-      for (const item of items) {
-        data[item.id] = {
-          label: item.label,
-          timestamp: item.timestamp.toISOString(),
-          messages: item.messages.map(m => ({
-            ...m,
-            timestamp: m.timestamp ? m.timestamp.toISOString() : null,
-          })),
-        };
-      }
-      await set(ref(this.db, `history/${user.uid}`), data);
-    } catch (err) {
-      console.error('Error saving history:', err);
+
+    const cleanHistory = this.historyItems().map(item => ({
+      id: item.id,
+      label: item.label ?? 'Generación',
+      timestamp:
+        item.timestamp instanceof Date
+          ? item.timestamp.toISOString()
+          : new Date(item.timestamp).toISOString(),
+      messages: this.sanitizeMessagesForSave(item.messages || []),
+    }));
+
+    set(ref(this.db, `history/${user.uid}`), cleanHistory).catch(error => {
+      console.error('Error saving history:', error);
+    });
+  }
+
+  private saveToHistory(): void {
+    const safeMessages = this.sanitizeMessagesForSave(this.messages());
+
+    const label =
+      this.messages().find(m => m.role === 'user')?.content?.slice(0, 40) ||
+      'Generación';
+
+    const sessionId = this.selectedHistoryId() ?? `session_${Date.now()}`;
+
+    if (this.selectedHistoryId()) {
+      this.historyItems.update(items =>
+        items.map(h =>
+          h.id === this.selectedHistoryId()
+            ? {
+                ...h,
+                label,
+                timestamp: new Date(),
+                messages: [...safeMessages],
+              }
+            : h
+        )
+      );
+    } else {
+      this.selectedHistoryId.set(sessionId);
+      this.historyItems.update(items => [
+        {
+          id: sessionId,
+          label,
+          timestamp: new Date(),
+          messages: [...safeMessages],
+        },
+        ...items,
+      ]);
+    }
+
+    if (this.currentUser()) {
+      this.saveHistoryToDB();
     }
   }
 
@@ -185,6 +276,7 @@ export class Home implements OnInit {
     if (user) {
       await set(ref(this.db, `history/${user.uid}`), null);
     }
+
     this.historyItems.set([]);
     this.messages.set([]);
     this.usedCredits.set(0);
@@ -194,7 +286,16 @@ export class Home implements OnInit {
 
   loadHistoryItem(item: HistoryItem): void {
     this.selectedHistoryId.set(item.id);
-    this.messages.set(item.messages);
+    this.messages.set(
+      (item.messages || []).map(m => ({
+        ...m,
+        isTyping: false,
+        typingStep: 'done',
+        visibleHtml: m.visibleHtml || '',
+        visibleCss: m.visibleCss || '',
+        visibleTs: m.visibleTs || '',
+      }))
+    );
     this.showPreview.set(false);
   }
 
@@ -211,27 +312,37 @@ export class Home implements OnInit {
     return this.messages().slice(0, msgIndex + 1).filter(m => m.role === 'bot').length;
   }
 
-
   async logout(): Promise<void> {
     await signOut(this.auth);
     this.messages.set([]);
     this.usedCredits.set(0);
     this.historyItems.set([]);
     this.showPreview.set(false);
+    this.selectedHistoryId.set(null);
   }
 
-  goToLogin(): void { window.location.href = '/Login'; }
-  goToRegister(): void { window.location.href = '/Registro'; }
+  goToLogin(): void {
+    window.location.href = '/Login';
+  }
 
+  goToRegister(): void {
+    window.location.href = '/Registro';
+  }
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) { alert('Solo se permiten imágenes'); return; }
+    if (!file.type.startsWith('image/')) {
+      alert('Solo se permiten imágenes');
+      return;
+    }
+
     this.selectedImage = file;
     const reader = new FileReader();
-    reader.onload = () => { this.imagePreview = reader.result; };
+    reader.onload = () => {
+      this.imagePreview = reader.result;
+    };
     reader.readAsDataURL(file);
   }
 
@@ -240,10 +351,14 @@ export class Home implements OnInit {
     this.imagePreview = null;
   }
 
-
   sendImage(): void {
-    if (!this.selectedImage) return;
-    if (this.creditsLeft() <= 0) { this.showModal.set(true); return; }
+    const instruction = this.userInstruction?.trim() || '';
+
+    if (!this.selectedImage && !instruction) return;
+    if (this.creditsLeft() <= 0) {
+      this.showModal.set(true);
+      return;
+    }
     if (this.isLoading()) return;
 
     this.isLoading.set(true);
@@ -251,33 +366,52 @@ export class Home implements OnInit {
     const userMsg: ChatMessage = {
       id: `msg_${Date.now()}_u`,
       role: 'user',
-      content: this.userInstruction || `Imagen: ${this.selectedImage.name}`,
-      htmlContent: '', cssContent: '', tsContent: '',
+      content: instruction || `Imagen: ${this.selectedImage?.name}`,
+      htmlContent: '',
+      cssContent: '',
+      tsContent: '',
       timestamp: new Date(),
+      isTyping: false,
+      typingStep: null,
+      visibleHtml: '',
+      visibleCss: '',
+      visibleTs: '',
     };
 
     this.messages.update(msgs => [...msgs, userMsg]);
     this.scrollToBottom();
 
+    const context = this.messages().map(m => ({
+      role: m.role,
+      content: m.content ?? '',
+      htmlContent: m.htmlContent ?? '',
+      cssContent: m.cssContent ?? '',
+      tsContent: m.tsContent ?? '',
+      timestamp:
+        m.timestamp instanceof Date
+          ? m.timestamp.toISOString()
+          : (m.timestamp ?? null),
+    }));
+
     const formData = new FormData();
-    formData.append('file', this.selectedImage);
-    formData.append('instruction', this.userInstruction);
+
+    if (this.selectedImage) {
+      formData.append('file', this.selectedImage);
+    }
+
+    formData.append('instruction', instruction);
+    formData.append('context', JSON.stringify(context));
 
     this.http.post<{ html: string; css: string; ts: string }>(
-      'https://backen-bayron-788289092522.us-central1.run.app/generate',
+      'http://127.0.0.1:8000/generate',
       formData
     ).subscribe({
       next: (response) => {
         this.usedCredits.update(c => c + 1);
 
         const html = response.html ?? '';
-        const css  = response.css  ?? '';
-        const ts   = response.ts   ?? '';
-
-        console.log('[CodeVision] Response received:', {
-          htmlLen: html.length, cssLen: css.length, tsLen: ts.length,
-          htmlPreview: html.slice(0, 80)
-        });
+        const css = response.css ?? '';
+        const ts = response.ts ?? '';
 
         const msgId = `msg_${Date.now()}_b`;
         const newMsg: ChatMessage = {
@@ -306,7 +440,6 @@ export class Home implements OnInit {
         this.scrollToBottom();
 
         setTimeout(() => this.saveToHistory(), 100);
-
         this.startTypingAnimation(newMsg);
       },
       error: (err) => {
@@ -316,39 +449,15 @@ export class Home implements OnInit {
     });
   }
 
-  private saveToHistory(): void {
-    const label = this.messages().find(m => m.role === 'user')?.content?.slice(0, 40) || 'Generación';
-    const sessionId = this.selectedHistoryId() ?? `session_${Date.now()}`;
-
-    if (this.selectedHistoryId()) {
-      this.historyItems.update(items =>
-        items.map(h => h.id === this.selectedHistoryId()
-          ? { ...h, messages: [...this.messages()] }
-          : h
-        )
-      );
-    } else {
-      this.selectedHistoryId.set(sessionId);
-      this.historyItems.update(items => [{
-        id: sessionId,
-        label,
-        timestamp: new Date(),
-        messages: [...this.messages()],
-      }, ...items]);
-    }
-
-    if (this.currentUser()) {
-      this.saveHistoryToDB();
-    }
-  }
-
-
   getVisibleCode(msg: ChatMessage, field: 'html' | 'css' | 'ts'): string {
     const live = this.messages().find(m => m.id === msg.id) ?? msg;
 
-    const content = field === 'html' ? live.htmlContent
-                  : field === 'css'  ? live.cssContent
-                  : live.tsContent;
+    const content =
+      field === 'html'
+        ? live.htmlContent
+        : field === 'css'
+        ? live.cssContent
+        : live.tsContent;
 
     if (!content) return '';
 
@@ -360,15 +469,19 @@ export class Home implements OnInit {
     }
 
     if (live.typingStep === field) {
-      const visible = field === 'html' ? (live.visibleHtml ?? '')
-                    : field === 'css'  ? (live.visibleCss ?? '')
-                    : (live.visibleTs ?? '');
+      const visible =
+        field === 'html'
+          ? (live.visibleHtml ?? '')
+          : field === 'css'
+          ? (live.visibleCss ?? '')
+          : (live.visibleTs ?? '');
       return visible;
     }
 
     const order: Array<'html' | 'css' | 'ts'> = ['html', 'css', 'ts'];
     const currentIdx = order.indexOf(live.typingStep as 'html' | 'css' | 'ts');
     const fieldIdx = order.indexOf(field);
+
     if (fieldIdx < currentIdx) return trunc(content);
 
     return '';
@@ -376,7 +489,7 @@ export class Home implements OnInit {
 
   private updateMsg(target: ChatMessage, patch: Partial<ChatMessage>): void {
     this.messages.update(msgs =>
-      msgs.map(m => m.id === target.id ? { ...m, ...patch } : m)
+      msgs.map(m => (m.id === target.id ? { ...m, ...patch } : m))
     );
     Object.assign(target, patch);
   }
@@ -385,7 +498,13 @@ export class Home implements OnInit {
     this.animateField(msg, 'html', msg.htmlContent, () => {
       this.animateField(msg, 'css', msg.cssContent, () => {
         this.animateField(msg, 'ts', msg.tsContent, () => {
-          this.updateMsg(msg, { isTyping: false, typingStep: 'done' });
+          this.updateMsg(msg, {
+            isTyping: false,
+            typingStep: 'done',
+            visibleHtml: msg.visibleHtml ?? '',
+            visibleCss: msg.visibleCss ?? '',
+            visibleTs: msg.visibleTs ?? '',
+          });
           this.scrollToBottom();
         });
       });
@@ -398,7 +517,10 @@ export class Home implements OnInit {
     fullText: string,
     onDone: () => void
   ): void {
-    if (!fullText) { onDone(); return; }
+    if (!fullText) {
+      onDone();
+      return;
+    }
 
     this.updateMsg(msg, { typingStep: field });
 
@@ -410,9 +532,11 @@ export class Home implements OnInit {
       const visible = preview.slice(0, idx);
 
       const patch: Partial<ChatMessage> =
-        field === 'html' ? { visibleHtml: visible }
-      : field === 'css'  ? { visibleCss: visible }
-      : { visibleTs: visible };
+        field === 'html'
+          ? { visibleHtml: visible }
+          : field === 'css'
+          ? { visibleCss: visible }
+          : { visibleTs: visible };
 
       this.updateMsg(msg, patch);
       this.scrollToBottom();
@@ -438,34 +562,80 @@ export class Home implements OnInit {
     }, 50);
   }
 
+ openPreview(html: string, css: string, ts: string): void {
+  this.previewHtmlContent.set(html);
+  this.previewCssContent.set(css);
+  this.previewTsContent.set(ts);
 
-  openPreview(html: string, css: string, ts: string): void {
-    this.previewHtmlContent.set(html);
-    this.previewCssContent.set(css);
-    this.previewTsContent.set(ts);
-    const code = `<style>${css}</style>${html}`;
-    this.previewCode.set(code);
-    this.previewTab.set('preview');
-    this.showPreview.set(true);
-    const blob = new Blob([code], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    this.previewIframeSrc.set(this.sanitizer.bypassSecurityTrustResourceUrl(url));
+  const fullHtml = `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <style>
+        html, body {
+          margin: 0;
+          padding: 0;
+          width: 100%;
+          min-height: 100%;
+        }
+
+        body {
+          font-family: Arial, sans-serif;
+        }
+
+        .preview-root {
+          min-height: 100vh;
+        }
+
+        ${css.replace(/:host/g, '.preview-root')}
+      </style>
+    </head>
+    <body>
+      <div class="preview-root">
+        ${html}
+      </div>
+    </body>
+    </html>
+  `;
+
+  this.previewCode.set(fullHtml);
+  this.previewTab.set('preview');
+  this.showPreview.set(true);
+
+  const blob = new Blob([fullHtml], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  this.previewIframeSrc.set(
+    this.sanitizer.bypassSecurityTrustResourceUrl(url)
+  );
+}
+  closePreview(): void {
+    this.showPreview.set(false);
   }
 
-  closePreview(): void { this.showPreview.set(false); }
-  closeModal(): void { this.showModal.set(false); }
+  closeModal(): void {
+    this.showModal.set(false);
+  }
 
-  copyToClipboard(text: string): void { navigator.clipboard.writeText(text); }
+  copyToClipboard(text: string): void {
+    navigator.clipboard.writeText(text);
+  }
 
-  getLineCount(code: string): number { return code ? code.split('\n').length : 0; }
+  getLineCount(code: string): number {
+    return code ? code.split('\n').length : 0;
+  }
 
   copyCode(): void {
     const tab = this.previewTab();
     const text =
-      tab === 'html' ? this.previewHtmlContent() :
-      tab === 'css'  ? this.previewCssContent()  :
-      tab === 'ts'   ? this.previewTsContent()   :
-      this.previewCode();
+      tab === 'html'
+        ? this.previewHtmlContent()
+        : tab === 'css'
+        ? this.previewCssContent()
+        : tab === 'ts'
+        ? this.previewTsContent()
+        : this.previewCode();
 
     navigator.clipboard.writeText(text).then(() => {
       this.copySuccess.set(true);
@@ -475,6 +645,9 @@ export class Home implements OnInit {
 
   openInNewTab(): void {
     const win = window.open('', '_blank');
-    if (win) { win.document.write(this.previewCode()); win.document.close(); }
+    if (win) {
+      win.document.write(this.previewCode());
+      win.document.close();
+    }
   }
 }

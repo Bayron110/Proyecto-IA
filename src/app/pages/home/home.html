@@ -128,7 +128,7 @@
             <div class="welcome-icon">🖼️</div>
             <h2 class="welcome-title">Convierte tu diseño en código</h2>
             <p class="welcome-desc">
-              Sube una imagen y nuestra IA generará automáticamente HTML, CSS y TypeScript limpios.
+              Sube una imagen o escribe una instrucción y nuestra IA generará automáticamente HTML, CSS y TypeScript limpios.
             </p>
             <div class="welcome-chips">
               <span class="chip">⚡ IA Generativa</span>
@@ -219,7 +219,7 @@
                 <span class="dot"></span>
                 <span class="dot"></span>
                 <span class="dot"></span>
-                <span class="loading-text">Analizando imagen...</span>
+                <span class="loading-text">Generando respuesta...</span>
               </div>
             </div>
           }
@@ -257,8 +257,8 @@
               <button
                 class="send-btn"
                 (click)="sendImage()"
-                [disabled]="!selectedImage || isLoading()"
-                [class.ready]="!!selectedImage && !isLoading()">
+                [disabled]="(!userInstruction?.trim() && !selectedImage) || isLoading()"
+                [class.ready]="(!!userInstruction?.trim() || !!selectedImage) && !isLoading()">
                 @if (isLoading()) {
                   <span class="send-spinner"></span>
                 } @else {
@@ -279,7 +279,7 @@
           <div class="preview-empty">
             <div class="preview-empty-icon">🖥️</div>
             <p class="preview-empty-title">Sin previsualización</p>
-            <p class="preview-empty-desc">Genera código desde una imagen para ver el resultado aquí</p>
+            <p class="preview-empty-desc">Genera código para ver el resultado aquí</p>
           </div>
         }
 
