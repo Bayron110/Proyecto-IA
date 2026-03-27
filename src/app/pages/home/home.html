@@ -1,5 +1,4 @@
 <div class="app-shell">
-
   <aside class="sidebar" [class.collapsed]="sidebarCollapsed()">
     <div class="sidebar-header">
       <div class="ai-brand">
@@ -8,18 +7,18 @@
           <span class="ai-title">CodeVision</span>
         }
       </div>
+
       <button
         class="sidebar-toggle"
         (click)="sidebarCollapsed.set(!sidebarCollapsed())"
-        [title]="sidebarCollapsed() ? 'Expandir' : 'Colapsar'">
+        [title]="sidebarCollapsed() ? 'Expandir' : 'Colapsar'"
+      >
         {{ sidebarCollapsed() ? '›' : '‹' }}
       </button>
     </div>
 
     @if (!sidebarCollapsed()) {
-      <button class="new-chat-btn" (click)="newChat()">
-        <span>✦</span> Nueva generación
-      </button>
+      <button class="new-chat-btn" (click)="newChat()"><span>✦</span> Nueva generación</button>
     } @else {
       <button class="new-chat-btn icon-only" (click)="newChat()" title="Nueva generación">✦</button>
     }
@@ -33,10 +32,11 @@
               <button
                 class="history-item"
                 [class.active]="selectedHistoryId() === item.id"
-                (click)="loadHistoryItem(item)">
+                (click)="loadHistoryItem(item)"
+              >
                 <span class="history-item-icon">🖼️</span>
                 <span class="history-item-label">{{ item.label }}</span>
-                <span class="history-item-time">{{ item.timestamp | date:'HH:mm' }}</span>
+                <span class="history-item-time">{{ item.timestamp | date: 'HH:mm' }}</span>
               </button>
             }
           }
@@ -47,7 +47,8 @@
               <button
                 class="history-item"
                 [class.active]="selectedHistoryId() === item.id"
-                (click)="loadHistoryItem(item)">
+                (click)="loadHistoryItem(item)"
+              >
                 <span class="history-item-icon">🖼️</span>
                 <span class="history-item-label">{{ item.label }}</span>
               </button>
@@ -60,14 +61,19 @@
               <button
                 class="history-item"
                 [class.active]="selectedHistoryId() === item.id"
-                (click)="loadHistoryItem(item)">
+                (click)="loadHistoryItem(item)"
+              >
                 <span class="history-item-icon">🖼️</span>
                 <span class="history-item-label">{{ item.label }}</span>
               </button>
             }
           }
 
-          @if (historyGroups().today.length === 0 && historyGroups().yesterday.length === 0 && historyGroups().older.length === 0) {
+          @if (
+            historyGroups().today.length === 0 &&
+            historyGroups().yesterday.length === 0 &&
+            historyGroups().older.length === 0
+          ) {
             <div class="sidebar-empty">
               <span>🗂️</span>
               <p>Sin historial aún</p>
@@ -99,7 +105,6 @@
   </aside>
 
   <div class="chat-main">
-
     <div class="chat-topbar">
       <div class="topbar-left">
         <div class="ai-status">
@@ -107,11 +112,13 @@
           Modelo activo
         </div>
       </div>
+
       <div class="topbar-right">
         <div class="credits-badge" [class.low]="creditsLeft() <= 1">
           <span>⚡</span>
           {{ creditsLeft() }} crédito{{ creditsLeft() !== 1 ? 's' : '' }}
         </div>
+
         @if (!currentUser() && !isAuthLoading()) {
           <button class="nav-login-btn" (click)="goToLogin()">Iniciar sesión</button>
           <button class="nav-register-btn" (click)="goToRegister()">Registrarse</button>
@@ -120,25 +127,28 @@
     </div>
 
     <div class="main-layout" [class.preview-open]="showPreview()">
-
       <div class="left-panel">
-
         @if (messages().length === 0 && !isLoading()) {
           <div class="welcome-state">
             <div class="welcome-icon">🖼️</div>
             <h2 class="welcome-title">Convierte tu diseño en código</h2>
             <p class="welcome-desc">
-              Sube una imagen o escribe una instrucción y nuestra IA generará automáticamente HTML, CSS y TypeScript limpios.
+              Sube una imagen o escribe una instrucción y nuestra IA generará automáticamente HTML,
+              CSS y TypeScript limpios.
             </p>
+
             <div class="welcome-chips">
               <span class="chip">⚡ IA Generativa</span>
               <span class="chip">📋 HTML limpio</span>
               <span class="chip">🎨 CSS separado</span>
               <span class="chip">🔷 TypeScript</span>
             </div>
+
             @if (!currentUser() && !isAuthLoading()) {
               <div class="guest-banner">
-                <p>🔒 <strong>Inicia sesión</strong> para obtener 25 créditos y guardar tu historial</p>
+                <p>
+                  🔒 <strong>Inicia sesión</strong> para obtener 25 créditos y guardar tu historial
+                </p>
                 <div class="guest-banner-btns">
                   <button (click)="goToRegister()">Crear cuenta gratis</button>
                   <button class="ghost" (click)="goToLogin()">Iniciar sesión</button>
@@ -149,7 +159,7 @@
         }
 
         <div class="chat-messages" #chatMessages>
-          @for (msg of messages(); track $index; let i = $index) {
+          @for (msg of messages(); track msg.id; let i = $index) {
             @if (msg.role === 'user') {
               <div class="msg-row user-row">
                 <div class="avatar user-avatar">U</div>
@@ -161,16 +171,21 @@
               <div class="bot-response">
                 <div class="bot-response-header">
                   <div class="avatar bot-avatar">✦</div>
+
                   <div class="bot-meta">
                     <span class="bot-label">Código generado</span>
                     <span class="bot-timestamp">
                       Generación #{{ getBotIndex(i) }}
                       @if (msg.timestamp) {
-                        · {{ msg.timestamp | date:'shortTime' }}
+                        · {{ msg.timestamp | date: 'shortTime' }}
                       }
                     </span>
                   </div>
-                  <button class="preview-btn" (click)="openPreview(msg.htmlContent, msg.cssContent, msg.tsContent)">
+
+                  <button
+                    class="preview-btn"
+                    (click)="openPreview(msg.htmlContent, msg.cssContent, msg.tsContent)"
+                  >
                     👁️ Ver preview
                   </button>
                 </div>
@@ -178,34 +193,57 @@
                 <div class="code-block-wrapper">
                   <div class="code-block-header">
                     <div class="lang-badge html-badge"><span class="lang-dot"></span>HTML</div>
-                    <button class="copy-mini-btn" (click)="copyToClipboard(msg.htmlContent)">📋 Copiar</button>
+                    <button class="copy-mini-btn" (click)="copyToClipboard(msg.htmlContent)">
+                      📋 Copiar
+                    </button>
                   </div>
-                  <pre class="code-preview"
+
+                  <pre
+                    class="code-preview"
                     [class.is-typing]="msg.isTyping && msg.typingStep === 'html'"
-                    [class.typing-done]="!msg.isTyping || msg.typingStep !== 'html'"><code>{{ getVisibleCode(msg, 'html') }}{{ msg.isTyping && msg.typingStep === 'html' ? '█' : '' }}</code></pre>
+                    [class.typing-done]="!msg.isTyping || msg.typingStep !== 'html'"
+                  >
+<code>{{ getVisibleCode(msg, 'html') }}{{ msg.isTyping && msg.typingStep === 'html' ? '█' : '' }}</code>
+                  </pre>
                 </div>
 
                 @if (msg.cssContent) {
                   <div class="code-block-wrapper">
                     <div class="code-block-header">
                       <div class="lang-badge css-badge"><span class="lang-dot"></span>CSS</div>
-                      <button class="copy-mini-btn" (click)="copyToClipboard(msg.cssContent)">📋 Copiar</button>
+                      <button class="copy-mini-btn" (click)="copyToClipboard(msg.cssContent)">
+                        📋 Copiar
+                      </button>
                     </div>
-                    <pre class="code-preview"
+
+                    <pre
+                      class="code-preview"
                       [class.is-typing]="msg.isTyping && msg.typingStep === 'css'"
-                      [class.typing-done]="!msg.isTyping || msg.typingStep !== 'css'"><code>{{ getVisibleCode(msg, 'css') }}{{ msg.isTyping && msg.typingStep === 'css' ? '█' : '' }}</code></pre>
+                      [class.typing-done]="!msg.isTyping || msg.typingStep !== 'css'"
+                    >
+<code>{{ getVisibleCode(msg, 'css') }}{{ msg.isTyping && msg.typingStep === 'css' ? '█' : '' }}</code>
+                    </pre>
                   </div>
                 }
 
                 @if (msg.tsContent) {
                   <div class="code-block-wrapper">
                     <div class="code-block-header">
-                      <div class="lang-badge ts-badge"><span class="lang-dot"></span>TypeScript</div>
-                      <button class="copy-mini-btn" (click)="copyToClipboard(msg.tsContent)">📋 Copiar</button>
+                      <div class="lang-badge ts-badge">
+                        <span class="lang-dot"></span>TypeScript
+                      </div>
+                      <button class="copy-mini-btn" (click)="copyToClipboard(msg.tsContent)">
+                        📋 Copiar
+                      </button>
                     </div>
-                    <pre class="code-preview"
+
+                    <pre
+                      class="code-preview"
                       [class.is-typing]="msg.isTyping && msg.typingStep === 'ts'"
-                      [class.typing-done]="!msg.isTyping || msg.typingStep !== 'ts'"><code>{{ getVisibleCode(msg, 'ts') }}{{ msg.isTyping && msg.typingStep === 'ts' ? '█' : '' }}</code></pre>
+                      [class.typing-done]="!msg.isTyping || msg.typingStep !== 'ts'"
+                    >
+<code>{{ getVisibleCode(msg, 'ts') }}{{ msg.isTyping && msg.typingStep === 'ts' ? '█' : '' }}</code>
+                    </pre>
                   </div>
                 }
               </div>
@@ -231,18 +269,34 @@
               <img [src]="imagePreview" class="attached-img" alt="preview" />
               <div class="attached-info">
                 <p>{{ selectedImage.name }}</p>
-                <button (click)="removeImage()">✕ Eliminar</button>
+                <button type="button" (click)="removeImage()">✕ Eliminar</button>
               </div>
             </div>
           }
 
           <div class="input-box" [class.has-image]="!!selectedImage">
             <label class="upload-btn" for="fileInput" title="Adjuntar imagen">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"
+                />
               </svg>
             </label>
-            <input id="fileInput" type="file" accept="image/*" (change)="onFileSelected($event)" style="display: none" />
+
+            <input
+              id="fileInput"
+              type="file"
+              accept="image/*"
+              (change)="onFileSelected($event)"
+              style="display: none"
+            />
 
             <textarea
               [(ngModel)]="userInstruction"
@@ -253,24 +307,39 @@
             ></textarea>
 
             <div class="input-actions">
-              <span class="credits-mini" [class.low]="creditsLeft() <= 1">⚡{{ creditsLeft() }}/{{ freeCredits() }}</span>
+              <span class="credits-mini" [class.low]="creditsLeft() <= 1">
+                ⚡{{ creditsLeft() }}/{{ freeCredits() }}
+              </span>
+
               <button
                 class="send-btn"
                 (click)="sendImage()"
-                [disabled]="(!userInstruction?.trim() && !selectedImage) || isLoading()"
-                [class.ready]="(!!userInstruction?.trim() || !!selectedImage) && !isLoading()">
+                [disabled]="(!userInstruction.trim() && !selectedImage) || isLoading()"
+                [class.ready]="(!!userInstruction.trim() || !!selectedImage) && !isLoading()"
+              >
                 @if (isLoading()) {
                   <span class="send-spinner"></span>
                 } @else {
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <line x1="22" y1="2" x2="11" y2="13"/>
-                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                   </svg>
                 }
               </button>
             </div>
           </div>
-          <p class="input-hint">JPG, PNG o WEBP · {{ creditsLeft() }} generaciones {{ currentUser() ? '' : 'gratuitas ' }}restantes · Enter para enviar</p>
+
+          <p class="input-hint">
+            JPG, PNG o WEBP · {{ creditsLeft() }} generaciones
+            {{ currentUser() ? '' : 'gratuitas ' }}restantes · Enter para enviar
+          </p>
         </div>
       </div>
 
@@ -287,23 +356,52 @@
           <div class="preview-container">
             <div class="preview-header">
               <div class="preview-tabs">
-                <button [class.active]="previewTab() === 'preview'" (click)="previewTab.set('preview')">🖥️ Vista</button>
-                <button [class.active]="previewTab() === 'html'" (click)="previewTab.set('html')">HTML</button>
-                <button [class.active]="previewTab() === 'css'" (click)="previewTab.set('css')">CSS</button>
-                <button [class.active]="previewTab() === 'ts'" (click)="previewTab.set('ts')">TS</button>
+                <button
+                  [class.active]="previewTab() === 'preview'"
+                  (click)="previewTab.set('preview')"
+                >
+                  🖥️ Vista
+                </button>
+
+                <button [class.active]="previewTab() === 'html'" (click)="previewTab.set('html')">
+                  HTML
+                </button>
+
+                <button [class.active]="previewTab() === 'css'" (click)="previewTab.set('css')">
+                  CSS
+                </button>
+
+                <button [class.active]="previewTab() === 'ts'" (click)="previewTab.set('ts')">
+                  TS
+                </button>
               </div>
+
               <div class="preview-actions">
-                <button class="action-btn" (click)="copyCode()" [title]="copySuccess() ? '¡Copiado!' : 'Copiar'">
+                <button
+                  class="action-btn"
+                  (click)="copyCode()"
+                  [title]="copySuccess() ? '¡Copiado!' : 'Copiar'"
+                >
                   {{ copySuccess() ? '✅' : '📋' }}
                 </button>
-                <button class="action-btn" (click)="openInNewTab()" title="Abrir en nueva pestaña">↗️</button>
+
+                <button class="action-btn" (click)="openInNewTab()" title="Abrir en nueva pestaña">
+                  ↗️
+                </button>
+
                 <button class="close-btn" (click)="closePreview()">✕</button>
               </div>
             </div>
 
             <div class="preview-body">
               @if (previewTab() === 'preview') {
-                <iframe [src]="previewIframeSrc()" class="preview-iframe" title="Vista previa" sandbox="allow-scripts allow-same-origin"></iframe>
+                <iframe
+                  [src]="previewIframeSrc()"
+                  class="preview-iframe"
+                  title="Vista previa"
+                  sandbox="allow-scripts allow-same-origin"
+                >
+                </iframe>
               }
 
               @if (previewTab() === 'html') {
@@ -339,7 +437,6 @@
           </div>
         }
       </div>
-
     </div>
   </div>
 </div>
@@ -349,16 +446,19 @@
     <div class="modal-card" (click)="$event.stopPropagation()">
       <div class="modal-icon">⚡</div>
       <h2 class="modal-title">Créditos gratuitos agotados</h2>
+
       @if (!currentUser()) {
         <p class="modal-desc">
           Has utilizado tus <strong>3 generaciones gratuitas</strong>.<br />
           Inicia sesión o crea una cuenta para obtener <strong>25 créditos</strong>.
         </p>
+
         <div class="modal-perks">
           <div class="perk">✅ 25 generaciones incluidas</div>
           <div class="perk">✅ Exportar HTML + CSS + TS</div>
           <div class="perk">✅ Historial guardado en la nube</div>
         </div>
+
         <div class="modal-buttons">
           <button class="modal-btn primary" (click)="goToRegister()">🚀 Crear cuenta gratis</button>
           <button class="modal-btn secondary" (click)="goToLogin()">Iniciar sesión</button>
@@ -366,6 +466,7 @@
       } @else {
         <p class="modal-desc">Has utilizado tus <strong>25 generaciones</strong> disponibles.</p>
       }
+
       <button class="modal-close" (click)="closeModal()">✕</button>
     </div>
   </div>
